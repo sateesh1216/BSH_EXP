@@ -28,6 +28,14 @@ export default {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'
 				},
+				success: {
+					DEFAULT: 'hsl(var(--success))',
+					foreground: 'hsl(var(--success-foreground))'
+				},
+				'taxi-green': 'hsl(var(--taxi-green))',
+				'taxi-green-light': 'hsl(var(--taxi-green-light))',
+				'taxi-blue': 'hsl(var(--taxi-blue))',
+				'taxi-orange': 'hsl(var(--taxi-orange))',
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
 					foreground: 'hsl(var(--secondary-foreground))'
