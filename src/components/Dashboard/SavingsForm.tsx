@@ -12,12 +12,13 @@ import { format } from 'date-fns';
 const SavingsForm = () => {
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [amount, setAmount] = useState('');
+  const [details, setDetails] = useState('');
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const addSavingsMutation = useMutation({
-    mutationFn: async (savingsData: { date: string; amount: number }) => {
+    mutationFn: async (savingsData: { date: string; amount: number; details: string }) => {
       const { data, error } = await supabase
         .from('savings')
         .insert([
@@ -25,6 +26,7 @@ const SavingsForm = () => {
             user_id: user?.id,
             date: savingsData.date,
             amount: savingsData.amount,
+            details: savingsData.details,
           },
         ])
         .select();
@@ -40,6 +42,7 @@ const SavingsForm = () => {
       // Reset form
       setDate(format(new Date(), 'yyyy-MM-dd'));
       setAmount('');
+      setDetails('');
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['monthly-stats'] });
       queryClient.invalidateQueries({ queryKey: ['savings'] });
@@ -56,7 +59,7 @@ const SavingsForm = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!date || !amount) {
+    if (!date || !amount || !details) {
       toast({
         title: "Error",
         description: "Please fill in all fields",
@@ -78,6 +81,7 @@ const SavingsForm = () => {
     addSavingsMutation.mutate({
       date,
       amount: numericAmount,
+      details,
     });
   };
 
@@ -88,7 +92,7 @@ const SavingsForm = () => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="savings-date">Date</Label>
               <Input
@@ -96,6 +100,18 @@ const SavingsForm = () => {
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="savings-details">Saving Details</Label>
+              <Input
+                id="savings-details"
+                type="text"
+                value={details}
+                onChange={(e) => setDetails(e.target.value)}
+                placeholder="Enter saving details"
                 required
               />
             </div>

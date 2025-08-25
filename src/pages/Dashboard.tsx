@@ -26,7 +26,7 @@ const Dashboard = () => {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-6 w-6 text-expense-green" />
-              <h1 className="text-2xl font-bold text-foreground">Expense Dashboard</h1>
+              <h1 className="text-2xl font-bold text-foreground">BSH EXPENSES</h1>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">

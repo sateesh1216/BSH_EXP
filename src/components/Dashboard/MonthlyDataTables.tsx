@@ -163,6 +163,7 @@ const MonthlyDataTables = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Saving Details</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
               </TableRow>
@@ -171,7 +172,8 @@ const MonthlyDataTables = () => {
               {savingsData && savingsData.length > 0 ? (
                 savingsData.map((saving) => (
                   <TableRow key={saving.id}>
-                    <TableCell className="font-medium">{formatDate(saving.date)}</TableCell>
+                    <TableCell className="font-medium">{saving.details || 'N/A'}</TableCell>
+                    <TableCell>{formatDate(saving.date)}</TableCell>
                     <TableCell className="text-right text-expense-blue font-semibold">
                       {formatCurrency(saving.amount)}
                     </TableCell>
@@ -179,7 +181,7 @@ const MonthlyDataTables = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
                     No savings records for this month
                   </TableCell>
                 </TableRow>
