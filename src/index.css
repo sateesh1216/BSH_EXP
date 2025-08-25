@@ -17,16 +17,17 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 142 76% 36%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 220 70% 50%;
+    --primary-foreground: 210 40% 98%;
     
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
     
-    --taxi-green: 142 76% 36%;
-    --taxi-green-light: 142 76% 90%;
-    --taxi-blue: 217 91% 60%;
-    --taxi-orange: 25 95% 53%;
+    /* Expense Tracker Colors */
+    --expense-green: 142 76% 36%;
+    --expense-red: 0 84% 60%;
+    --expense-blue: 221 83% 53%;
+    --expense-purple: 262 83% 58%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;

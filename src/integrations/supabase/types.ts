@@ -14,111 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
-      companies: {
+      expenses: {
         Row: {
-          address: string | null
-          contact_person: string | null
+          amount: number
           created_at: string
-          created_by: string | null
-          email: string | null
+          date: string
+          expense_details: string
           id: string
-          name: string
-          phone: string | null
+          payment_mode: string
           updated_at: string
+          user_id: string
         }
         Insert: {
-          address?: string | null
-          contact_person?: string | null
+          amount?: number
           created_at?: string
-          created_by?: string | null
-          email?: string | null
+          date: string
+          expense_details: string
           id?: string
-          name: string
-          phone?: string | null
+          payment_mode: string
           updated_at?: string
+          user_id: string
         }
         Update: {
-          address?: string | null
-          contact_person?: string | null
+          amount?: number
           created_at?: string
-          created_by?: string | null
-          email?: string | null
+          date?: string
+          expense_details?: string
           id?: string
-          name?: string
-          phone?: string | null
+          payment_mode?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
-      drivers: {
+      income: {
         Row: {
+          amount: number
           created_at: string
-          created_by: string | null
-          id: string
-          license_number: string | null
-          name: string
-          phone: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          license_number?: string | null
-          name: string
-          phone?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          license_number?: string | null
-          name?: string
-          phone?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      maintenance: {
-        Row: {
-          created_at: string
-          created_by: string | null
           date: string
           id: string
-          km_at_maintenance: number | null
-          maintenance_cost: number | null
-          maintenance_type: string
-          next_oil_change_km: number | null
-          original_odometer_km: number | null
+          source: string
           updated_at: string
-          vehicle_info: string | null
+          user_id: string
         }
         Insert: {
+          amount?: number
           created_at?: string
-          created_by?: string | null
           date: string
           id?: string
-          km_at_maintenance?: number | null
-          maintenance_cost?: number | null
-          maintenance_type: string
-          next_oil_change_km?: number | null
-          original_odometer_km?: number | null
+          source: string
           updated_at?: string
-          vehicle_info?: string | null
+          user_id: string
         }
         Update: {
+          amount?: number
           created_at?: string
-          created_by?: string | null
           date?: string
           id?: string
-          km_at_maintenance?: number | null
-          maintenance_cost?: number | null
-          maintenance_type?: string
-          next_oil_change_km?: number | null
-          original_odometer_km?: number | null
+          source?: string
           updated_at?: string
-          vehicle_info?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -152,86 +107,32 @@ export type Database = {
         }
         Relationships: []
       }
-      trips: {
+      savings: {
         Row: {
-          calculated_profit: number | null
-          commission: number | null
-          company_id: string | null
-          company_name: string | null
+          amount: number
           created_at: string
-          created_by: string | null
           date: string
-          destination: string
-          driver_amount: number | null
-          driver_id: string | null
-          driver_name: string
-          fuel_cost: number | null
-          fuel_type: string | null
           id: string
-          payment_mode: string | null
-          route: string
-          tolls: number | null
-          trip_amount: number | null
           updated_at: string
+          user_id: string
         }
         Insert: {
-          calculated_profit?: number | null
-          commission?: number | null
-          company_id?: string | null
-          company_name?: string | null
+          amount?: number
           created_at?: string
-          created_by?: string | null
           date: string
-          destination: string
-          driver_amount?: number | null
-          driver_id?: string | null
-          driver_name: string
-          fuel_cost?: number | null
-          fuel_type?: string | null
           id?: string
-          payment_mode?: string | null
-          route: string
-          tolls?: number | null
-          trip_amount?: number | null
           updated_at?: string
+          user_id: string
         }
         Update: {
-          calculated_profit?: number | null
-          commission?: number | null
-          company_id?: string | null
-          company_name?: string | null
+          amount?: number
           created_at?: string
-          created_by?: string | null
           date?: string
-          destination?: string
-          driver_amount?: number | null
-          driver_id?: string | null
-          driver_name?: string
-          fuel_cost?: number | null
-          fuel_type?: string | null
           id?: string
-          payment_mode?: string | null
-          route?: string
-          tolls?: number | null
-          trip_amount?: number | null
           updated_at?: string
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "trips_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trips_driver_id_fkey"
-            columns: ["driver_id"]
-            isOneToOne: false
-            referencedRelation: "drivers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_roles: {
         Row: {

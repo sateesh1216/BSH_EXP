@@ -32,10 +32,10 @@ export default {
 					DEFAULT: 'hsl(var(--success))',
 					foreground: 'hsl(var(--success-foreground))'
 				},
-				'taxi-green': 'hsl(var(--taxi-green))',
-				'taxi-green-light': 'hsl(var(--taxi-green-light))',
-				'taxi-blue': 'hsl(var(--taxi-blue))',
-				'taxi-orange': 'hsl(var(--taxi-orange))',
+				'expense-green': 'hsl(var(--expense-green))',
+				'expense-red': 'hsl(var(--expense-red))',
+				'expense-blue': 'hsl(var(--expense-blue))',
+				'expense-purple': 'hsl(var(--expense-purple))',
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
 					foreground: 'hsl(var(--secondary-foreground))'
