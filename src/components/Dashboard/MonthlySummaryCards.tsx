@@ -61,7 +61,7 @@ const MonthlySummaryCards = ({ selectedMonth, selectedYear }: MonthlySummaryCard
       const totalIncome = incomeResult.data?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
       const totalExpenses = expensesResult.data?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
       const totalSavings = savingsResult.data?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
-      const inAccount = totalSavings; // This represents the accumulated savings (In Account)
+      const inAccount = totalIncome - totalExpenses - totalSavings; // Monthly income - Monthly Expenses - Monthly Savings = In Account
 
       return {
         totalIncome,

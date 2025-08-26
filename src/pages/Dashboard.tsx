@@ -11,6 +11,7 @@ import ExpenseForm from '@/components/Dashboard/ExpenseForm';
 import SavingsForm from '@/components/Dashboard/SavingsForm';
 import EditableDataTable from '@/components/Dashboard/EditableDataTable';
 import Reports from '@/components/Dashboard/Reports';
+import DownloadData from '@/components/Dashboard/DownloadData';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -79,6 +80,7 @@ const Dashboard = () => {
               <span className="text-sm text-muted-foreground">
                 Welcome back! Track your income, expenses, and savings.
               </span>
+              <DownloadData selectedMonth={selectedMonth} selectedYear={selectedYear} />
               <Button variant="outline" onClick={signOut} size="sm">
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout

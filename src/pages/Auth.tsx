@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Navigate } from 'react-router-dom';
-import { Car } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 
 const Auth = () => {
   const { user, signIn, signUp } = useAuth();
@@ -69,10 +69,10 @@ const Auth = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Car className="h-8 w-8 text-taxi-green" />
-            <h1 className="text-3xl font-bold text-taxi-green">Taxi Service</h1>
+            <TrendingUp className="h-8 w-8 text-expense-green" />
+            <h1 className="text-3xl font-bold text-expense-green">BSH EXPENSES</h1>
           </div>
-          <p className="text-muted-foreground">Manage your taxi operations efficiently</p>
+          <p className="text-muted-foreground">Manage your income, expenses, and savings efficiently</p>
         </div>
 
         <Card>
