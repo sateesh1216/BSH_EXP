@@ -2,46 +2,75 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, PiggyBank, DollarSign } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 
-const MonthlySummaryCards = () => {
-  const currentDate = new Date();
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
+interface MonthlySummaryCardsProps {
+  selectedMonth: string;
+  selectedYear: string;
+}
+
+const MonthlySummaryCards = ({ selectedMonth, selectedYear }: MonthlySummaryCardsProps) => {
+  const { user } = useAuth();
+
+  // Calculate date range based on filters
+  const getDateRange = () => {
+    const year = parseInt(selectedYear);
+    
+    if (selectedMonth === 'all') {
+      return {
+        start: format(startOfYear(new Date(year, 0, 1)), 'yyyy-MM-dd'),
+        end: format(endOfYear(new Date(year, 0, 1)), 'yyyy-MM-dd')
+      };
+    } else {
+      const month = parseInt(selectedMonth) - 1;
+      const date = new Date(year, month, 1);
+      return {
+        start: format(startOfMonth(date), 'yyyy-MM-dd'),
+        end: format(endOfMonth(date), 'yyyy-MM-dd')
+      };
+    }
+  };
+
+  const { start, end } = getDateRange();
 
   const { data: stats } = useQuery({
-    queryKey: ['monthly-stats', format(currentDate, 'yyyy-MM')],
+    queryKey: ['monthly-stats', selectedYear, selectedMonth],
     queryFn: async () => {
       const [incomeResult, expensesResult, savingsResult] = await Promise.all([
         supabase
           .from('income')
           .select('amount')
-          .gte('date', format(monthStart, 'yyyy-MM-dd'))
-          .lte('date', format(monthEnd, 'yyyy-MM-dd')),
+          .eq('user_id', user?.id)
+          .gte('date', start)
+          .lte('date', end),
         supabase
           .from('expenses')
           .select('amount')
-          .gte('date', format(monthStart, 'yyyy-MM-dd'))
-          .lte('date', format(monthEnd, 'yyyy-MM-dd')),
+          .eq('user_id', user?.id)
+          .gte('date', start)
+          .lte('date', end),
         supabase
           .from('savings')
           .select('amount')
-          .gte('date', format(monthStart, 'yyyy-MM-dd'))
-          .lte('date', format(monthEnd, 'yyyy-MM-dd'))
+          .eq('user_id', user?.id)
+          .gte('date', start)
+          .lte('date', end)
       ]);
 
       const totalIncome = incomeResult.data?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
       const totalExpenses = expensesResult.data?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
       const totalSavings = savingsResult.data?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
-      const netSavings = totalIncome - totalExpenses - totalSavings;
+      const inAccount = totalSavings; // This represents the accumulated savings (In Account)
 
       return {
         totalIncome,
         totalExpenses,
         totalSavings,
-        netSavings
+        inAccount
       };
     },
+    enabled: !!user?.id,
   });
 
   const formatCurrency = (amount: number) => {
@@ -98,10 +127,10 @@ const MonthlySummaryCards = () => {
           <DollarSign className="h-4 w-4 text-expense-purple" />
         </CardHeader>
         <CardContent>
-          <div className={`text-2xl font-bold ${(stats?.netSavings || 0) >= 0 ? 'text-expense-green' : 'text-expense-red'}`}>
-            {formatCurrency(stats?.netSavings || 0)}
+          <div className="text-2xl font-bold text-expense-blue">
+            {formatCurrency(stats?.inAccount || 0)}
           </div>
-          <p className="text-xs text-muted-foreground">Income - Expenses - Savings</p>
+          <p className="text-xs text-muted-foreground">Total savings accumulated</p>
         </CardContent>
       </Card>
     </div>

@@ -1,28 +1,75 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, TrendingUp, TrendingDown, PiggyBank, BarChart3 } from 'lucide-react';
+import { LogOut, TrendingUp } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
+import { format } from 'date-fns';
+import Sidebar from '@/components/Dashboard/Sidebar';
 import MonthlySummaryCards from '@/components/Dashboard/MonthlySummaryCards';
 import IncomeForm from '@/components/Dashboard/IncomeForm';
 import ExpenseForm from '@/components/Dashboard/ExpenseForm';
 import SavingsForm from '@/components/Dashboard/SavingsForm';
-import MonthlyDataTables from '@/components/Dashboard/MonthlyDataTables';
-import { Navigate } from 'react-router-dom';
+import EditableDataTable from '@/components/Dashboard/EditableDataTable';
+import Reports from '@/components/Dashboard/Reports';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState('income');
+  const [activeSection, setActiveSection] = useState('income');
+  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MM'));
+  const [selectedYear, setSelectedYear] = useState(format(new Date(), 'yyyy'));
 
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
 
+  const renderForm = () => {
+    switch (activeSection) {
+      case 'income':
+        return <IncomeForm />;
+      case 'expenses':
+        return <ExpenseForm />;
+      case 'savings':
+        return <SavingsForm />;
+      default:
+        return null;
+    }
+  };
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'income':
+        return (
+          <div className="space-y-6">
+            <IncomeForm />
+            <EditableDataTable type="income" selectedMonth={selectedMonth} selectedYear={selectedYear} />
+          </div>
+        );
+      case 'expenses':
+        return (
+          <div className="space-y-6">
+            <ExpenseForm />
+            <EditableDataTable type="expenses" selectedMonth={selectedMonth} selectedYear={selectedYear} />
+          </div>
+        );
+      case 'savings':
+        return (
+          <div className="space-y-6">
+            <SavingsForm />
+            <EditableDataTable type="savings" selectedMonth={selectedMonth} selectedYear={selectedYear} />
+          </div>
+        );
+      case 'reports':
+        return <Reports selectedMonth={selectedMonth} selectedYear={selectedYear} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="bg-card shadow-sm border-b border-border">
+        <div className="px-6">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-6 w-6 text-expense-green" />
@@ -41,50 +88,29 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <MonthlySummaryCards />
+      {/* Main Layout */}
+      <div className="flex">
+        {/* Sidebar */}
+        <Sidebar
+          activeSection={activeSection}
+          setActiveSection={setActiveSection}
+          selectedMonth={selectedMonth}
+          setSelectedMonth={setSelectedMonth}
+          selectedYear={selectedYear}
+          setSelectedYear={setSelectedYear}
+        />
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="income" className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Income
-            </TabsTrigger>
-            <TabsTrigger value="expenses" className="flex items-center gap-2">
-              <TrendingDown className="h-4 w-4" />
-              Expenses
-            </TabsTrigger>
-            <TabsTrigger value="savings" className="flex items-center gap-2">
-              <PiggyBank className="h-4 w-4" />
-              Savings
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Reports
-            </TabsTrigger>
-          </TabsList>
+        {/* Main Content */}
+        <main className="flex-1 p-6">
+          {/* Summary Cards */}
+          <div className="mb-6">
+            <MonthlySummaryCards selectedMonth={selectedMonth} selectedYear={selectedYear} />
+          </div>
 
-          <TabsContent value="income" className="space-y-6">
-            <IncomeForm />
-            <MonthlyDataTables />
-          </TabsContent>
-
-          <TabsContent value="expenses" className="space-y-6">
-            <ExpenseForm />
-            <MonthlyDataTables />
-          </TabsContent>
-
-          <TabsContent value="savings" className="space-y-6">
-            <SavingsForm />
-            <MonthlyDataTables />
-          </TabsContent>
-
-          <TabsContent value="reports" className="space-y-6">
-            <MonthlyDataTables />
-          </TabsContent>
-        </Tabs>
-      </main>
+          {/* Dynamic Content */}
+          {renderContent()}
+        </main>
+      </div>
     </div>
   );
 };
