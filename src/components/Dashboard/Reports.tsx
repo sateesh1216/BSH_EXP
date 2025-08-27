@@ -72,7 +72,7 @@ const Reports = ({ selectedMonth, selectedYear }: ReportsProps) => {
       return Object.entries(monthlyData).map(([month, data]) => ({
         month: format(new Date(year, parseInt(month) - 1), 'MMM'),
         ...data,
-        net: data.income - data.expenses
+        net: data.income - data.expenses - data.savings
       }));
     },
     enabled: !!user?.id,
@@ -124,8 +124,8 @@ const Reports = ({ selectedMonth, selectedYear }: ReportsProps) => {
         totalIncome,
         totalExpenses,
         totalSavings,
-        netAmount: totalIncome - totalExpenses,
-        inAccount: totalSavings
+        netAmount: totalIncome - totalExpenses - totalSavings,
+        inAccount: totalIncome - totalExpenses - totalSavings
       };
     },
     enabled: !!user?.id,
