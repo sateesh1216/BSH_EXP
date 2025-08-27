@@ -67,21 +67,31 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card shadow-sm border-b border-border">
-        <div className="px-6">
+    <div className="min-h-screen bg-gradient-surface">
+      {/* Professional Header */}
+      <header className="glass-effect border-b border-border/50 sticky top-0 z-50 backdrop-blur-md">
+        <div className="px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-6 w-6 text-expense-green" />
-              <h1 className="text-2xl font-bold text-foreground">BSH EXPENSES</h1>
+            <div className="flex items-center gap-3 animate-fade-in">
+              <div className="p-2 bg-gradient-primary rounded-xl shadow-glow">
+                <TrendingUp className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gradient">BSH EXPENSES</h1>
+                <p className="text-xs text-muted-foreground">Financial Management System</p>
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                Welcome back! Track your income, expenses, and savings.
+            <div className="flex items-center gap-4 animate-fade-in [animation-delay:0.2s]">
+              <span className="text-sm text-muted-foreground hidden sm:block">
+                Welcome back! Track your finances professionally.
               </span>
               <DownloadData selectedMonth={selectedMonth} selectedYear={selectedYear} />
-              <Button variant="outline" onClick={signOut} size="sm">
+              <Button 
+                variant="outline" 
+                onClick={signOut} 
+                size="sm"
+                className="hover-lift border-border/40 bg-card/50"
+              >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
@@ -103,14 +113,18 @@ const Dashboard = () => {
         />
 
         {/* Main Content */}
-        <main className="flex-1 p-6">
-          {/* Summary Cards */}
-          <div className="mb-6">
-            <MonthlySummaryCards selectedMonth={selectedMonth} selectedYear={selectedYear} />
-          </div>
+        <main className="flex-1 p-6 lg:p-8 overflow-auto">
+          <div className="max-w-7xl mx-auto space-y-8">
+            {/* Summary Cards */}
+            <div className="animate-slide-up">
+              <MonthlySummaryCards selectedMonth={selectedMonth} selectedYear={selectedYear} />
+            </div>
 
-          {/* Dynamic Content */}
-          {renderContent()}
+            {/* Dynamic Content */}
+            <div className="animate-slide-up [animation-delay:0.3s]">
+              {renderContent()}
+            </div>
+          </div>
         </main>
       </div>
     </div>
