@@ -38,9 +38,9 @@ All colors MUST be HSL. Gradients and shadows for professional appearance.
     --danger-foreground: 0 0% 100%;
     
     /* Financial Data Colors */
-    --expense-green: 142 69% 58%;
+    --expense-green: 142 69% 45%;
     --expense-red: 0 84% 60%;
-    --expense-blue: 217 91% 60%;
+    --expense-blue: 221 100% 45%;
     --expense-purple: 262 80% 65%;
     --expense-amber: 43 96% 56%;
 
@@ -119,9 +119,9 @@ All colors MUST be HSL. Gradients and shadows for professional appearance.
     --danger: 0 84% 65%;
     --danger-foreground: 215 28% 17%;
 
-    --expense-green: 142 69% 65%;
+    --expense-green: 142 69% 45%;
     --expense-red: 0 84% 65%;
-    --expense-blue: 217 91% 65%;
+    --expense-blue: 221 100% 45%;
     --expense-purple: 262 80% 70%;
     --expense-amber: 43 96% 65%;
 
