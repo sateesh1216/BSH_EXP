@@ -10,6 +10,8 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  failedAttempts: number;
+  isBlocked: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +33,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [isBlocked, setIsBlocked] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener
@@ -71,24 +75,90 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Input validation helper
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) && email.length <= 254;
+  };
+
+  const validatePassword = (password: string): boolean => {
+    return password.length >= 8 && password.length <= 128;
+  };
+
+  const sanitizeInput = (input: string): string => {
+    return input.trim().toLowerCase();
+  };
+
   const signUp = async (email: string, password: string) => {
+    // Input validation and sanitization
+    const sanitizedEmail = sanitizeInput(email);
+    
+    if (!validateEmail(sanitizedEmail)) {
+      return { error: { message: 'Please enter a valid email address' } };
+    }
+    
+    if (!validatePassword(password)) {
+      return { error: { message: 'Password must be between 8 and 128 characters' } };
+    }
+
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
-      email,
+      email: sanitizedEmail,
       password,
       options: {
         emailRedirectTo: redirectUrl
       }
     });
+    
     return { error };
   };
 
   const signIn = async (email: string, password: string) => {
+    // Check if user is blocked due to too many failed attempts
+    if (isBlocked) {
+      return { error: { message: 'Too many failed attempts. Please try again later.' } };
+    }
+
+    // Input validation and sanitization
+    const sanitizedEmail = sanitizeInput(email);
+    
+    if (!validateEmail(sanitizedEmail)) {
+      return { error: { message: 'Please enter a valid email address' } };
+    }
+    
+    if (!validatePassword(password)) {
+      return { error: { message: 'Invalid credentials' } }; // Don't reveal password requirements on login
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: sanitizedEmail,
       password,
     });
+    
+    // Handle failed attempts
+    if (error) {
+      const newFailedAttempts = failedAttempts + 1;
+      setFailedAttempts(newFailedAttempts);
+      
+      // Block after 5 failed attempts
+      if (newFailedAttempts >= 5) {
+        setIsBlocked(true);
+        // Unblock after 15 minutes
+        setTimeout(() => {
+          setIsBlocked(false);
+          setFailedAttempts(0);
+        }, 15 * 60 * 1000);
+        return { error: { message: 'Too many failed attempts. Please try again in 15 minutes.' } };
+      }
+      
+      return { error: { message: 'Invalid credentials' } }; // Generic error message
+    }
+    
+    // Reset failed attempts on successful login
+    setFailedAttempts(0);
+    setIsBlocked(false);
+    
     return { error };
   };
 
@@ -104,6 +174,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signIn,
     signOut,
     isAdmin,
+    failedAttempts,
+    isBlocked,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

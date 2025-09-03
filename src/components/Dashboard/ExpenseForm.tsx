@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { sanitizeInput, validateAmount, validateDate, validateTextInput, checkRateLimit, rateLimitKey } from '@/lib/security';
 
 const ExpenseForm = () => {
   const [expenseDetails, setExpenseDetails] = useState('');
@@ -68,30 +69,74 @@ const ExpenseForm = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!expenseDetails || !date || !paymentMode || !amount) {
+    // Rate limiting check
+    if (!user?.id || !checkRateLimit(rateLimitKey(user.id, 'add_expense'), 20, 60000)) {
       toast({
         title: "Error",
-        description: "Please fill in all fields",
+        description: "Too many requests. Please wait a moment before trying again.",
         variant: "destructive",
       });
       return;
     }
 
-    const numericAmount = parseFloat(amount);
-    if (isNaN(numericAmount) || numericAmount <= 0) {
+    // Input validation and sanitization
+    const sanitizedExpenseDetails = sanitizeInput(expenseDetails);
+    
+    const detailsValidation = validateTextInput(sanitizedExpenseDetails, 'Expense details', 2, 200);
+    if (!detailsValidation.isValid) {
       toast({
         title: "Error",
-        description: "Please enter a valid amount",
+        description: detailsValidation.error,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const dateValidation = validateDate(date);
+    if (!dateValidation.isValid) {
+      toast({
+        title: "Error",
+        description: dateValidation.error,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!paymentMode) {
+      toast({
+        title: "Error",
+        description: "Please select a payment mode",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate payment mode against allowed values
+    const allowedPaymentModes = ['card', 'upi', 'cash'];
+    if (!allowedPaymentModes.includes(paymentMode)) {
+      toast({
+        title: "Error",
+        description: "Invalid payment mode selected",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const amountValidation = validateAmount(amount);
+    if (!amountValidation.isValid) {
+      toast({
+        title: "Error",
+        description: amountValidation.error,
         variant: "destructive",
       });
       return;
     }
 
     addExpenseMutation.mutate({
-      expense_details: expenseDetails,
+      expense_details: sanitizedExpenseDetails,
       date,
       payment_mode: paymentMode,
-      amount: numericAmount,
+      amount: parseFloat(amount),
     });
   };
 

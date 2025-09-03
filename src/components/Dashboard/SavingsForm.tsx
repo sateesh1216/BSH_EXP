@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { sanitizeInput, validateAmount, validateDate, validateTextInput, checkRateLimit, rateLimitKey } from '@/lib/security';
 
 const SavingsForm = () => {
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -59,20 +60,44 @@ const SavingsForm = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!date || !amount || !details) {
+    // Rate limiting check
+    if (!user?.id || !checkRateLimit(rateLimitKey(user.id, 'add_savings'), 20, 60000)) {
       toast({
         title: "Error",
-        description: "Please fill in all fields",
+        description: "Too many requests. Please wait a moment before trying again.",
         variant: "destructive",
       });
       return;
     }
 
-    const numericAmount = parseFloat(amount);
-    if (isNaN(numericAmount) || numericAmount <= 0) {
+    // Input validation and sanitization
+    const sanitizedDetails = sanitizeInput(details);
+    
+    const detailsValidation = validateTextInput(sanitizedDetails, 'Savings details', 2, 200);
+    if (!detailsValidation.isValid) {
       toast({
         title: "Error",
-        description: "Please enter a valid amount",
+        description: detailsValidation.error,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const dateValidation = validateDate(date);
+    if (!dateValidation.isValid) {
+      toast({
+        title: "Error",
+        description: dateValidation.error,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const amountValidation = validateAmount(amount);
+    if (!amountValidation.isValid) {
+      toast({
+        title: "Error",
+        description: amountValidation.error,
         variant: "destructive",
       });
       return;
@@ -80,8 +105,8 @@ const SavingsForm = () => {
 
     addSavingsMutation.mutate({
       date,
-      amount: numericAmount,
-      details,
+      amount: parseFloat(amount),
+      details: sanitizedDetails,
     });
   };
 

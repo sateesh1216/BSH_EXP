@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { sanitizeInput, validateAmount, validateDate, validateTextInput, checkRateLimit, rateLimitKey } from '@/lib/security';
 
 const IncomeForm = () => {
   const [source, setSource] = useState('');
@@ -59,29 +60,53 @@ const IncomeForm = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!source || !date || !amount) {
+    // Rate limiting check
+    if (!user?.id || !checkRateLimit(rateLimitKey(user.id, 'add_income'), 20, 60000)) {
       toast({
         title: "Error",
-        description: "Please fill in all fields",
+        description: "Too many requests. Please wait a moment before trying again.",
         variant: "destructive",
       });
       return;
     }
 
-    const numericAmount = parseFloat(amount);
-    if (isNaN(numericAmount) || numericAmount <= 0) {
+    // Input validation and sanitization
+    const sanitizedSource = sanitizeInput(source);
+    
+    const sourceValidation = validateTextInput(sanitizedSource, 'Source', 2, 100);
+    if (!sourceValidation.isValid) {
       toast({
         title: "Error",
-        description: "Please enter a valid amount",
+        description: sourceValidation.error,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const dateValidation = validateDate(date);
+    if (!dateValidation.isValid) {
+      toast({
+        title: "Error",
+        description: dateValidation.error,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const amountValidation = validateAmount(amount);
+    if (!amountValidation.isValid) {
+      toast({
+        title: "Error",
+        description: amountValidation.error,
         variant: "destructive",
       });
       return;
     }
 
     addIncomeMutation.mutate({
-      source,
+      source: sanitizedSource,
       date,
-      amount: numericAmount,
+      amount: parseFloat(amount),
     });
   };
 

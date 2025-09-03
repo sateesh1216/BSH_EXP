@@ -7,11 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Navigate } from 'react-router-dom';
-import { TrendingUp, Mail, Lock, ArrowRight } from 'lucide-react';
+import { TrendingUp, Mail, Lock, ArrowRight, Shield, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizeInput, validateTextInput } from '@/lib/security';
 
 const Auth = () => {
-  const { user, signIn, signUp } = useAuth();
+  const { user, signIn, signUp, failedAttempts, isBlocked } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,7 +28,20 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     
-    const { error } = await signIn(email, password);
+    // Client-side validation
+    const sanitizedEmail = sanitizeInput(email);
+    const emailValidation = validateTextInput(sanitizedEmail, 'Email', 1, 254);
+    if (!emailValidation.isValid) {
+      toast({
+        title: 'Invalid email',
+        description: emailValidation.error,
+        variant: 'destructive',
+      });
+      setLoading(false);
+      return;
+    }
+    
+    const { error } = await signIn(sanitizedEmail, password);
     
     if (error) {
       toast({
@@ -49,7 +63,20 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     
-    const { error } = await signUp(email, password);
+    // Client-side validation
+    const sanitizedEmail = sanitizeInput(email);
+    const emailValidation = validateTextInput(sanitizedEmail, 'Email', 1, 254);
+    if (!emailValidation.isValid) {
+      toast({
+        title: 'Invalid email',
+        description: emailValidation.error,
+        variant: 'destructive',
+      });
+      setLoading(false);
+      return;
+    }
+    
+    const { error } = await signUp(sanitizedEmail, password);
     
     if (error) {
       toast({
@@ -71,7 +98,20 @@ const Auth = () => {
     e.preventDefault();
     setResetLoading(true);
     
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    // Client-side validation
+    const sanitizedEmail = sanitizeInput(email);
+    const emailValidation = validateTextInput(sanitizedEmail, 'Email', 1, 254);
+    if (!emailValidation.isValid) {
+      toast({
+        title: 'Invalid email',
+        description: emailValidation.error,
+        variant: 'destructive',
+      });
+      setResetLoading(false);
+      return;
+    }
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(sanitizedEmail, {
       redirectTo: `${window.location.origin}/`,
     });
     
@@ -125,6 +165,35 @@ const Auth = () => {
           </CardHeader>
           
           <CardContent className="pt-0">
+            {/* Security Status */}
+            {(failedAttempts > 0 || isBlocked) && (
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-medium text-destructive mb-1">Security Notice</h4>
+                  <p className="text-sm text-destructive/80">
+                    {isBlocked 
+                      ? 'Account temporarily locked due to multiple failed attempts. Please try again in 15 minutes.'
+                      : `${failedAttempts} failed sign-in attempt${failedAttempts > 1 ? 's' : ''}. Account will be locked after 5 attempts.`
+                    }
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-lg flex items-start gap-3">
+              <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-medium text-primary mb-1">Security Features Active</h4>
+                <p className="text-sm text-primary/80">
+                  • Input validation and sanitization<br />
+                  • Rate limiting protection<br />
+                  • Secure authentication with Supabase<br />
+                  • Row-level security policies
+                </p>
+              </div>
+            </div>
+            
             {showForgotPassword ? (
               /* Forgot Password Form */
               <form onSubmit={handleForgotPassword} className="space-y-6">
@@ -268,7 +337,7 @@ const Auth = () => {
                           />
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Password should be at least 6 characters long
+                          Password must be at least 8 characters long
                         </p>
                       </div>
                     </div>
