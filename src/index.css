@@ -176,7 +176,9 @@ All colors MUST be HSL. Gradients and shadows for professional appearance.
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply text-foreground font-sans antialiased;
+    background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--surface-elevated)) 50%, hsl(var(--muted)) 100%);
+    background-attachment: fixed;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 }

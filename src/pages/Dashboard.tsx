@@ -67,7 +67,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-surface">
+    <div className="min-h-screen bg-transparent">
       {/* Professional Header */}
       <header className="glass-effect border-b border-border/50 sticky top-0 z-50 backdrop-blur-md">
         <div className="px-6 lg:px-8">
