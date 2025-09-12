@@ -139,6 +139,8 @@ const Dashboard = () => {
         );
         case 'reports':
           return <Reports selectedMonth={selectedMonth} selectedYear={selectedYear} />;
+        case 'download':
+          return <DownloadData />;
         case 'upload':
           return <DataUpload />;
       default:
@@ -165,7 +167,6 @@ const Dashboard = () => {
               <span className="text-sm text-muted-foreground hidden sm:block">
                 Welcome back! Track your finances professionally.
               </span>
-              <DownloadData selectedMonth={selectedMonth} selectedYear={selectedYear} />
               <Button 
                 variant="outline" 
                 onClick={signOut} 
