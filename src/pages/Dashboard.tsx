@@ -15,6 +15,7 @@ import SavingsForm from '@/components/Dashboard/SavingsForm';
 import EditableDataTable from '@/components/Dashboard/EditableDataTable';
 import Reports from '@/components/Dashboard/Reports';
 import DownloadData from '@/components/Dashboard/DownloadData';
+import DataUpload from '@/components/Dashboard/DataUpload';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -136,8 +137,10 @@ const Dashboard = () => {
             <EditableDataTable type="savings" selectedMonth={selectedMonth} selectedYear={selectedYear} />
           </div>
         );
-      case 'reports':
-        return <Reports selectedMonth={selectedMonth} selectedYear={selectedYear} />;
+        case 'reports':
+          return <Reports selectedMonth={selectedMonth} selectedYear={selectedYear} />;
+        case 'upload':
+          return <DataUpload />;
       default:
         return null;
     }

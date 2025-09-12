@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, PiggyBank, BarChart3, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, PiggyBank, BarChart3, Calendar, Download, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface SidebarProps {
@@ -26,6 +26,8 @@ const Sidebar = ({
     { id: 'expenses', label: 'Expenses', icon: TrendingDown, color: 'text-expense-red' },
     { id: 'savings', label: 'Savings', icon: PiggyBank, color: 'text-expense-blue' },
     { id: 'reports', label: 'Reports', icon: BarChart3, color: 'text-primary' },
+    { id: 'download', label: 'Download Data', icon: Download, color: 'text-primary' },
+    { id: 'upload', label: 'Upload Data', icon: Upload, color: 'text-primary' },
   ];
 
   const currentYear = new Date().getFullYear();
