@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, TrendingUp } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { LogOut, TrendingUp, Search } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import Sidebar from '@/components/Dashboard/Sidebar';
@@ -18,6 +19,7 @@ const Dashboard = () => {
   const [activeSection, setActiveSection] = useState('income');
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MM'));
   const [selectedYear, setSelectedYear] = useState(format(new Date(), 'yyyy'));
+  const [expenseSearchTerm, setExpenseSearchTerm] = useState('');
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -49,7 +51,21 @@ const Dashboard = () => {
         return (
           <div className="space-y-6">
             <ExpenseForm />
-            <EditableDataTable type="expenses" selectedMonth={selectedMonth} selectedYear={selectedYear} />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search expenses (e.g., bike petrol, groceries...)"
+                value={expenseSearchTerm}
+                onChange={(e) => setExpenseSearchTerm(e.target.value)}
+                className="pl-10 max-w-md"
+              />
+            </div>
+            <EditableDataTable 
+              type="expenses" 
+              selectedMonth={selectedMonth} 
+              selectedYear={selectedYear}
+              searchTerm={expenseSearchTerm}
+            />
           </div>
         );
       case 'savings':

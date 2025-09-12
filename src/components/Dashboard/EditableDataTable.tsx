@@ -15,9 +15,10 @@ interface EditableDataTableProps {
   type: 'income' | 'expenses' | 'savings';
   selectedMonth: string;
   selectedYear: string;
+  searchTerm?: string;
 }
 
-const EditableDataTable = ({ type, selectedMonth, selectedYear }: EditableDataTableProps) => {
+const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm }: EditableDataTableProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -46,15 +47,21 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear }: EditableDataTa
   const { start, end } = getDateRange();
 
   const { data, isLoading } = useQuery({
-    queryKey: [type, selectedYear, selectedMonth],
+    queryKey: [type, selectedYear, selectedMonth, searchTerm],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from(type)
         .select('*')
         .eq('user_id', user?.id)
         .gte('date', start)
-        .lte('date', end)
-        .order('date', { ascending: false });
+        .lte('date', end);
+
+      // Add search filter for expenses
+      if (type === 'expenses' && searchTerm && searchTerm.trim()) {
+        query = query.ilike('expense_details', `%${searchTerm.trim()}%`);
+      }
+
+      const { data, error } = await query.order('date', { ascending: false });
 
       if (error) throw error;
       return data as any[];
