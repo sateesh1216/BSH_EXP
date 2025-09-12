@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LogOut, TrendingUp, Search } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import Sidebar from '@/components/Dashboard/Sidebar';
 import MonthlySummaryCards from '@/components/Dashboard/MonthlySummaryCards';
 import IncomeForm from '@/components/Dashboard/IncomeForm';
@@ -20,6 +22,55 @@ const Dashboard = () => {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MM'));
   const [selectedYear, setSelectedYear] = useState(format(new Date(), 'yyyy'));
   const [expenseSearchTerm, setExpenseSearchTerm] = useState('');
+
+  // Calculate date range for expense search total
+  const getDateRange = () => {
+    const year = parseInt(selectedYear);
+    
+    if (selectedMonth === 'all') {
+      return {
+        start: format(startOfYear(new Date(year, 0, 1)), 'yyyy-MM-dd'),
+        end: format(endOfYear(new Date(year, 0, 1)), 'yyyy-MM-dd')
+      };
+    } else {
+      const month = parseInt(selectedMonth) - 1;
+      const date = new Date(year, month, 1);
+      return {
+        start: format(startOfMonth(date), 'yyyy-MM-dd'),
+        end: format(endOfMonth(date), 'yyyy-MM-dd')
+      };
+    }
+  };
+
+  // Query for filtered expenses total
+  const { data: filteredExpensesTotal } = useQuery({
+    queryKey: ['filtered-expenses-total', selectedYear, selectedMonth, expenseSearchTerm],
+    queryFn: async () => {
+      if (!expenseSearchTerm.trim()) return 0;
+      
+      const { start, end } = getDateRange();
+      let query = supabase
+        .from('expenses')
+        .select('amount')
+        .eq('user_id', user?.id)
+        .gte('date', start)
+        .lte('date', end)
+        .ilike('expense_details', `%${expenseSearchTerm.trim()}%`);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      return data?.reduce((sum, expense) => sum + Number(expense.amount), 0) || 0;
+    },
+    enabled: !!user?.id && !!expenseSearchTerm.trim(),
+  });
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+    }).format(amount);
+  };
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -51,14 +102,24 @@ const Dashboard = () => {
         return (
           <div className="space-y-6">
             <ExpenseForm />
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search expenses (e.g., bike petrol, groceries...)"
-                value={expenseSearchTerm}
-                onChange={(e) => setExpenseSearchTerm(e.target.value)}
-                className="pl-10 max-w-md"
-              />
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search expenses (e.g., bike petrol, groceries...)"
+                  value={expenseSearchTerm}
+                  onChange={(e) => setExpenseSearchTerm(e.target.value)}
+                  className="pl-10 max-w-md"
+                />
+              </div>
+              {expenseSearchTerm.trim() && filteredExpensesTotal !== undefined && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-card border rounded-lg">
+                  <span className="text-sm text-muted-foreground">Total:</span>
+                  <span className="text-sm font-semibold text-expense-red">
+                    {formatCurrency(filteredExpensesTotal)}
+                  </span>
+                </div>
+              )}
             </div>
             <EditableDataTable 
               type="expenses" 
