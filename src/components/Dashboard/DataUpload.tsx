@@ -96,29 +96,65 @@ const DataUpload = () => {
       
       let successCount = 0;
       let errorCount = 0;
+      let skippedCount = 0;
       const errors: string[] = [];
+      const skippedRows: string[] = [];
+
+      // Helper function to parse date
+      const parseDate = (dateValue: any): string | null => {
+        if (!dateValue) return null;
+        
+        try {
+          // Handle Excel date numbers
+          if (typeof dateValue === 'number') {
+            const excelDate = new Date((dateValue - 25569) * 86400 * 1000);
+            return excelDate.toISOString().split('T')[0];
+          }
+          
+          // Handle string dates
+          const date = new Date(dateValue);
+          if (isNaN(date.getTime())) return null;
+          
+          return date.toISOString().split('T')[0];
+        } catch {
+          return null;
+        }
+      };
 
       // Process Income sheet
       if (workbook.SheetNames.includes('Income')) {
         const incomeSheet = workbook.Sheets['Income'];
         const incomeData = XLSX.utils.sheet_to_json(incomeSheet) as any[];
         
-        for (const row of incomeData) {
+        for (let i = 0; i < incomeData.length; i++) {
+          const row = incomeData[i];
           try {
-            if (row.date && row.amount && row.source) {
-              const { error } = await supabase.from('income').insert({
-                user_id: user.id,
-                date: new Date(row.date).toISOString().split('T')[0],
-                amount: Number(row.amount),
-                source: row.source.toString()
-              });
-              
-              if (error) throw error;
-              successCount++;
+            const parsedDate = parseDate(row.date);
+            const amount = Number(row.amount);
+            
+            // Validate required fields
+            if (!parsedDate || isNaN(amount) || !row.source) {
+              skippedCount++;
+              const missing = [];
+              if (!parsedDate) missing.push('date');
+              if (isNaN(amount)) missing.push('amount');
+              if (!row.source) missing.push('source');
+              skippedRows.push(`Income row ${i + 2}: Missing ${missing.join(', ')}`);
+              continue;
             }
+
+            const { error } = await supabase.from('income').insert({
+              user_id: user.id,
+              date: parsedDate,
+              amount: amount,
+              source: row.source.toString()
+            });
+            
+            if (error) throw error;
+            successCount++;
           } catch (error) {
             errorCount++;
-            errors.push(`Income row error: ${error}`);
+            errors.push(`Income row ${i + 2}: ${error}`);
           }
         }
       }
@@ -128,23 +164,37 @@ const DataUpload = () => {
         const expensesSheet = workbook.Sheets['Expenses'];
         const expensesData = XLSX.utils.sheet_to_json(expensesSheet) as any[];
         
-        for (const row of expensesData) {
+        for (let i = 0; i < expensesData.length; i++) {
+          const row = expensesData[i];
           try {
-            if (row.date && row.amount && row.expense_details && row.payment_mode) {
-              const { error } = await supabase.from('expenses').insert({
-                user_id: user.id,
-                date: new Date(row.date).toISOString().split('T')[0],
-                amount: Number(row.amount),
-                expense_details: row.expense_details.toString(),
-                payment_mode: row.payment_mode.toString()
-              });
-              
-              if (error) throw error;
-              successCount++;
+            const parsedDate = parseDate(row.date);
+            const amount = Number(row.amount);
+            
+            // Validate required fields
+            if (!parsedDate || isNaN(amount) || !row.expense_details || !row.payment_mode) {
+              skippedCount++;
+              const missing = [];
+              if (!parsedDate) missing.push('date');
+              if (isNaN(amount)) missing.push('amount');
+              if (!row.expense_details) missing.push('expense_details');
+              if (!row.payment_mode) missing.push('payment_mode');
+              skippedRows.push(`Expenses row ${i + 2}: Missing ${missing.join(', ')}`);
+              continue;
             }
+
+            const { error } = await supabase.from('expenses').insert({
+              user_id: user.id,
+              date: parsedDate,
+              amount: amount,
+              expense_details: row.expense_details.toString(),
+              payment_mode: row.payment_mode.toString()
+            });
+            
+            if (error) throw error;
+            successCount++;
           } catch (error) {
             errorCount++;
-            errors.push(`Expense row error: ${error}`);
+            errors.push(`Expenses row ${i + 2}: ${error}`);
           }
         }
       }
@@ -154,48 +204,75 @@ const DataUpload = () => {
         const savingsSheet = workbook.Sheets['Savings'];
         const savingsData = XLSX.utils.sheet_to_json(savingsSheet) as any[];
         
-        for (const row of savingsData) {
+        for (let i = 0; i < savingsData.length; i++) {
+          const row = savingsData[i];
           try {
-            if (row.date && row.amount) {
-              const { error } = await supabase.from('savings').insert({
-                user_id: user.id,
-                date: new Date(row.date).toISOString().split('T')[0],
-                amount: Number(row.amount),
-                details: row.details ? row.details.toString() : null
-              });
-              
-              if (error) throw error;
-              successCount++;
+            const parsedDate = parseDate(row.date);
+            const amount = Number(row.amount);
+            
+            // Validate required fields
+            if (!parsedDate || isNaN(amount)) {
+              skippedCount++;
+              const missing = [];
+              if (!parsedDate) missing.push('date');
+              if (isNaN(amount)) missing.push('amount');
+              skippedRows.push(`Savings row ${i + 2}: Missing ${missing.join(', ')}`);
+              continue;
             }
+
+            const { error } = await supabase.from('savings').insert({
+              user_id: user.id,
+              date: parsedDate,
+              amount: amount,
+              details: row.details ? row.details.toString() : null
+            });
+            
+            if (error) throw error;
+            successCount++;
           } catch (error) {
             errorCount++;
-            errors.push(`Savings row error: ${error}`);
+            errors.push(`Savings row ${i + 2}: ${error}`);
           }
         }
       }
 
+      // Show detailed results
       if (successCount > 0) {
+        let description = `${successCount} records uploaded successfully`;
+        if (skippedCount > 0) description += `, ${skippedCount} rows skipped`;
+        if (errorCount > 0) description += `, ${errorCount} failed`;
+        
         toast({
-          title: "Upload Successful",
-          description: `${successCount} records uploaded successfully${errorCount > 0 ? `, ${errorCount} failed` : ''}.`,
+          title: "Upload Complete",
+          description: description + '. Check console for details.',
         });
-      }
-
-      if (errorCount > 0 && successCount === 0) {
+        
+        // Log details to console for user reference
+        if (skippedRows.length > 0) {
+          console.log('Skipped rows (missing data):', skippedRows);
+        }
+        if (errors.length > 0) {
+          console.log('Error details:', errors);
+        }
+      } else {
         toast({
           title: "Upload Failed",
-          description: "No records were uploaded. Please check your file format.",
+          description: `No records were uploaded. ${skippedCount} rows skipped, ${errorCount} errors. Check console for details.`,
           variant: "destructive",
         });
+        
+        console.log('Skipped rows:', skippedRows);
+        console.log('Errors:', errors);
       }
 
       // Clear the input
       event.target.value = '';
       
     } catch (error) {
+      console.error('File processing error:', error);
       toast({
         title: "Upload Error",
-        description: "Failed to process the file. Please check the format.",
+        description: "Failed to process the file. Please check the format and try again.",
         variant: "destructive",
       });
     } finally {
