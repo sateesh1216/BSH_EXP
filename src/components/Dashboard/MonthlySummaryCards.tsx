@@ -15,6 +15,14 @@ const MonthlySummaryCards = ({ selectedMonth, selectedYear }: MonthlySummaryCard
 
   // Calculate date range based on filters
   const getDateRange = () => {
+    if (selectedYear === 'all') {
+      // Show all available data
+      return {
+        start: '2020-01-01', // Start from a reasonable past date
+        end: format(new Date(), 'yyyy-MM-dd') // End at today
+      };
+    }
+
     const year = parseInt(selectedYear);
     
     if (selectedMonth === 'all') {

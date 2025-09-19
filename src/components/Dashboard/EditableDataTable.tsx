@@ -27,6 +27,14 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm }: Ed
 
   // Calculate date range based on filters
   const getDateRange = () => {
+    if (selectedYear === 'all') {
+      // Show all available data
+      return {
+        start: '2020-01-01', // Start from a reasonable past date
+        end: format(new Date(), 'yyyy-MM-dd') // End at today
+      };
+    }
+
     const year = parseInt(selectedYear);
     
     if (selectedMonth === 'all') {
@@ -167,9 +175,10 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm }: Ed
   };
 
   const getTableTitle = () => {
+    const yearText = selectedYear === 'all' ? 'All Years' : selectedYear;
     const monthName = selectedMonth === 'all' ? 'All Months' : 
-      format(new Date(parseInt(selectedYear), parseInt(selectedMonth) - 1), 'MMMM');
-    return `${type.charAt(0).toUpperCase() + type.slice(1)} - ${monthName} ${selectedYear}`;
+      format(new Date(parseInt(selectedYear === 'all' ? '2024' : selectedYear), parseInt(selectedMonth) - 1), 'MMMM');
+    return `${type.charAt(0).toUpperCase() + type.slice(1)} - ${monthName} ${yearText}`;
   };
 
   const getColorClass = () => {

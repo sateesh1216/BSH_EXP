@@ -17,9 +17,17 @@ const Reports = ({ selectedMonth, selectedYear }: ReportsProps) => {
   const { data: yearlyData } = useQuery({
     queryKey: ['yearly-reports', selectedYear],
     queryFn: async () => {
-      const year = parseInt(selectedYear);
-      const startDate = format(startOfYear(new Date(year, 0, 1)), 'yyyy-MM-dd');
-      const endDate = format(endOfYear(new Date(year, 0, 1)), 'yyyy-MM-dd');
+      let startDate, endDate;
+
+      if (selectedYear === 'all') {
+        // Show all available data
+        startDate = '2020-01-01';
+        endDate = format(new Date(), 'yyyy-MM-dd');
+      } else {
+        const year = parseInt(selectedYear);
+        startDate = format(startOfYear(new Date(year, 0, 1)), 'yyyy-MM-dd');
+        endDate = format(endOfYear(new Date(year, 0, 1)), 'yyyy-MM-dd');
+      }
 
       const [incomeResult, expensesResult, savingsResult] = await Promise.all([
         supabase
@@ -42,38 +50,77 @@ const Reports = ({ selectedMonth, selectedYear }: ReportsProps) => {
           .lte('date', endDate)
       ]);
 
-      // Group by month
-      const monthlyData: { [key: string]: { income: number; expenses: number; savings: number } } = {};
+      // Group by month and year
+      const periodData: { [key: string]: { income: number; expenses: number; savings: number } } = {};
       
-      // Initialize all months
-      for (let i = 0; i < 12; i++) {
-        const monthKey = String(i + 1).padStart(2, '0');
-        monthlyData[monthKey] = { income: 0, expenses: 0, savings: 0 };
+      if (selectedYear === 'all') {
+        // Group by year when showing all years
+        const currentYear = new Date().getFullYear();
+        for (let year = 2020; year <= currentYear; year++) {
+          periodData[year.toString()] = { income: 0, expenses: 0, savings: 0 };
+        }
+
+        // Process income data
+        incomeResult.data?.forEach(item => {
+          const year = format(new Date(item.date), 'yyyy');
+          if (periodData[year]) {
+            periodData[year].income += Number(item.amount);
+          }
+        });
+
+        // Process expenses data
+        expensesResult.data?.forEach(item => {
+          const year = format(new Date(item.date), 'yyyy');
+          if (periodData[year]) {
+            periodData[year].expenses += Number(item.amount);
+          }
+        });
+
+        // Process savings data
+        savingsResult.data?.forEach(item => {
+          const year = format(new Date(item.date), 'yyyy');
+          if (periodData[year]) {
+            periodData[year].savings += Number(item.amount);
+          }
+        });
+
+        return Object.entries(periodData).map(([year, data]) => ({
+          month: year,
+          ...data,
+          net: data.income - data.expenses - data.savings
+        }));
+      } else {
+        // Group by month for specific year
+        const year = parseInt(selectedYear);
+        for (let i = 0; i < 12; i++) {
+          const monthKey = String(i + 1).padStart(2, '0');
+          periodData[monthKey] = { income: 0, expenses: 0, savings: 0 };
+        }
+
+        // Process income data
+        incomeResult.data?.forEach(item => {
+          const month = format(new Date(item.date), 'MM');
+          periodData[month].income += Number(item.amount);
+        });
+
+        // Process expenses data
+        expensesResult.data?.forEach(item => {
+          const month = format(new Date(item.date), 'MM');
+          periodData[month].expenses += Number(item.amount);
+        });
+
+        // Process savings data
+        savingsResult.data?.forEach(item => {
+          const month = format(new Date(item.date), 'MM');
+          periodData[month].savings += Number(item.amount);
+        });
+
+        return Object.entries(periodData).map(([month, data]) => ({
+          month: format(new Date(year, parseInt(month) - 1), 'MMM'),
+          ...data,
+          net: data.income - data.expenses - data.savings
+        }));
       }
-
-      // Process income data
-      incomeResult.data?.forEach(item => {
-        const month = format(new Date(item.date), 'MM');
-        monthlyData[month].income += Number(item.amount);
-      });
-
-      // Process expenses data
-      expensesResult.data?.forEach(item => {
-        const month = format(new Date(item.date), 'MM');
-        monthlyData[month].expenses += Number(item.amount);
-      });
-
-      // Process savings data
-      savingsResult.data?.forEach(item => {
-        const month = format(new Date(item.date), 'MM');
-        monthlyData[month].savings += Number(item.amount);
-      });
-
-      return Object.entries(monthlyData).map(([month, data]) => ({
-        month: format(new Date(year, parseInt(month) - 1), 'MMM'),
-        ...data,
-        net: data.income - data.expenses - data.savings
-      }));
     },
     enabled: !!user?.id,
   });
@@ -82,17 +129,24 @@ const Reports = ({ selectedMonth, selectedYear }: ReportsProps) => {
   const { data: summaryData } = useQuery({
     queryKey: ['summary-reports', selectedYear, selectedMonth],
     queryFn: async () => {
-      const year = parseInt(selectedYear);
       let startDate, endDate;
 
-      if (selectedMonth === 'all') {
-        startDate = format(startOfYear(new Date(year, 0, 1)), 'yyyy-MM-dd');
-        endDate = format(endOfYear(new Date(year, 0, 1)), 'yyyy-MM-dd');
+      if (selectedYear === 'all') {
+        // Show all available data
+        startDate = '2020-01-01';
+        endDate = format(new Date(), 'yyyy-MM-dd');
       } else {
-        const month = parseInt(selectedMonth) - 1;
-        const date = new Date(year, month, 1);
-        startDate = format(startOfMonth(date), 'yyyy-MM-dd');
-        endDate = format(endOfMonth(date), 'yyyy-MM-dd');
+        const year = parseInt(selectedYear);
+        
+        if (selectedMonth === 'all') {
+          startDate = format(startOfYear(new Date(year, 0, 1)), 'yyyy-MM-dd');
+          endDate = format(endOfYear(new Date(year, 0, 1)), 'yyyy-MM-dd');
+        } else {
+          const month = parseInt(selectedMonth) - 1;
+          const date = new Date(year, month, 1);
+          startDate = format(startOfMonth(date), 'yyyy-MM-dd');
+          endDate = format(endOfMonth(date), 'yyyy-MM-dd');
+        }
       }
 
       const [incomeResult, expensesResult, savingsResult] = await Promise.all([
@@ -140,6 +194,9 @@ const Reports = ({ selectedMonth, selectedYear }: ReportsProps) => {
   };
 
   const getPeriodTitle = () => {
+    if (selectedYear === 'all') {
+      return 'All Years Report';
+    }
     if (selectedMonth === 'all') {
       return `Year ${selectedYear} Report`;
     }
@@ -200,7 +257,9 @@ const Reports = ({ selectedMonth, selectedYear }: ReportsProps) => {
         {/* Monthly Bar Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Monthly Overview - {selectedYear}</CardTitle>
+            <CardTitle>
+              {selectedYear === 'all' ? 'Yearly Overview' : `Monthly Overview - ${selectedYear}`}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -220,7 +279,9 @@ const Reports = ({ selectedMonth, selectedYear }: ReportsProps) => {
         {/* Net Amount Line Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Net Amount Trend - {selectedYear}</CardTitle>
+            <CardTitle>
+              {selectedYear === 'all' ? 'Net Amount Trend - All Years' : `Net Amount Trend - ${selectedYear}`}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>

@@ -63,7 +63,8 @@ const Sidebar = ({
               <SelectTrigger>
                 <SelectValue placeholder="Select year" />
               </SelectTrigger>
-              <SelectContent>
+               <SelectContent>
+                <SelectItem value="all">All Years</SelectItem>
                 {years.map((year) => (
                   <SelectItem key={year} value={year.toString()}>
                     {year}
