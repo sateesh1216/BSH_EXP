@@ -90,7 +90,7 @@ const MonthlySummaryCards = ({ selectedMonth, selectedYear }: MonthlySummaryCard
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <Card className="bg-gradient-card border-0 shadow-card hover-lift animate-fade-in">
+      <Card className="bg-success/5 border-success/20 shadow-card hover-lift animate-fade-in backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Income Total</CardTitle>
           <div className="p-2 bg-success/10 rounded-full">
@@ -105,7 +105,7 @@ const MonthlySummaryCards = ({ selectedMonth, selectedYear }: MonthlySummaryCard
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-card border-0 shadow-card hover-lift animate-fade-in [animation-delay:0.1s]">
+      <Card className="bg-expense-red/5 border-expense-red/20 shadow-card hover-lift animate-fade-in [animation-delay:0.1s] backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Expenses Total</CardTitle>
           <div className="p-2 bg-expense-red/10 rounded-full">
@@ -120,7 +120,7 @@ const MonthlySummaryCards = ({ selectedMonth, selectedYear }: MonthlySummaryCard
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-card border-0 shadow-card hover-lift animate-fade-in [animation-delay:0.2s]">
+      <Card className="bg-expense-blue/5 border-expense-blue/20 shadow-card hover-lift animate-fade-in [animation-delay:0.2s] backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Savings Total</CardTitle>
           <div className="p-2 bg-expense-blue/10 rounded-full">
@@ -135,7 +135,7 @@ const MonthlySummaryCards = ({ selectedMonth, selectedYear }: MonthlySummaryCard
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-card border-0 shadow-card hover-lift animate-fade-in [animation-delay:0.3s]">
+      <Card className="bg-primary/5 border-primary/20 shadow-card hover-lift animate-fade-in [animation-delay:0.3s] backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <CardTitle className="text-sm font-medium text-muted-foreground">In Account</CardTitle>
           <div className="p-2 bg-primary/10 rounded-full">
