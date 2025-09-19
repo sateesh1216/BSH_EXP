@@ -87,7 +87,16 @@ const DataUpload = () => {
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user) return;
+    if (!file) return;
+    
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to upload data.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setUploading(true);
     try {
