@@ -3,13 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
-import { Edit, Trash2, Save, X } from 'lucide-react';
+import { Edit, Trash2, Save, X, FileText, Download } from 'lucide-react';
 
 interface EditableDataTableProps {
   type: 'income' | 'expenses' | 'savings';
@@ -24,6 +25,8 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm }: Ed
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>({});
+  const [billFile, setBillFile] = useState<File | null>(null);
+  const [warrantyFile, setWarrantyFile] = useState<File | null>(null);
 
   // Calculate date range based on filters
   const getDateRange = () => {
@@ -78,10 +81,48 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm }: Ed
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
+    mutationFn: async ({ id, updates, billFile, warrantyFile }: { id: string; updates: any; billFile?: File | null; warrantyFile?: File | null }) => {
+      let updatedData = { ...updates };
+
+      // Upload bill file if provided
+      if (billFile && user?.id) {
+        const fileExt = billFile.name.split('.').pop();
+        const fileName = `${user.id}/bills/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('expense-attachments')
+          .upload(fileName, billFile);
+
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('expense-attachments')
+          .getPublicUrl(fileName);
+        
+        updatedData.attachment_url = publicUrl;
+      }
+
+      // Upload warranty file if provided
+      if (warrantyFile && user?.id) {
+        const fileExt = warrantyFile.name.split('.').pop();
+        const fileName = `${user.id}/warranties/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('expense-attachments')
+          .upload(fileName, warrantyFile);
+
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('expense-attachments')
+          .getPublicUrl(fileName);
+        
+        updatedData.warranty_url = publicUrl;
+      }
+
       const { data, error } = await supabase
         .from(type)
-        .update(updates)
+        .update(updatedData)
         .eq('id', id)
         .eq('user_id', user?.id)
         .select();
@@ -96,6 +137,8 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm }: Ed
       });
       setEditingId(null);
       setEditData({});
+      setBillFile(null);
+      setWarrantyFile(null);
       queryClient.invalidateQueries({ queryKey: [type] });
       queryClient.invalidateQueries({ queryKey: ['monthly-stats'] });
     },
@@ -149,23 +192,70 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm }: Ed
   const handleEdit = (item: any) => {
     setEditingId(item.id);
     setEditData({ ...item });
+    setBillFile(null);
+    setWarrantyFile(null);
   };
 
   const handleSave = () => {
     if (!editingId) return;
+
+    // Validate file types and sizes if provided
+    if (billFile) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'application/pdf'];
+      if (!allowedTypes.includes(billFile.type)) {
+        toast({
+          title: "Error",
+          description: "Bill: Only JPG, PNG, WEBP, and PDF files are allowed",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (billFile.size > 5242880) { // 5MB
+        toast({
+          title: "Error",
+          description: "Bill: File size must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    if (warrantyFile) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'application/pdf'];
+      if (!allowedTypes.includes(warrantyFile.type)) {
+        toast({
+          title: "Error",
+          description: "Warranty: Only JPG, PNG, WEBP, and PDF files are allowed",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (warrantyFile.size > 5242880) { // 5MB
+        toast({
+          title: "Error",
+          description: "Warranty: File size must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     
     const updates = { ...editData };
     delete updates.id;
     delete updates.user_id;
     delete updates.created_at;
     delete updates.updated_at;
+    delete updates.attachment_url;
+    delete updates.warranty_url;
     
-    updateMutation.mutate({ id: editingId, updates });
+    updateMutation.mutate({ id: editingId, updates, billFile, warrantyFile });
   };
 
   const handleCancel = () => {
     setEditingId(null);
     setEditData({});
+    setBillFile(null);
+    setWarrantyFile(null);
   };
 
   const handleDelete = (id: string) => {
@@ -285,14 +375,82 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm }: Ed
                   {type === 'expenses' && (
                     <>
                       <TableCell>
-                      {editingId === item.id ? (
-                          <Input
-                            value={editData.expense_details || ''}
-                            onChange={(e) => setEditData({ ...editData, expense_details: e.target.value })}
-                            className="min-w-[150px]"
-                          />
+                        {editingId === item.id ? (
+                          <div className="space-y-2 min-w-[200px]">
+                            <Input
+                              value={editData.expense_details || ''}
+                              onChange={(e) => setEditData({ ...editData, expense_details: e.target.value })}
+                              placeholder="Expense details"
+                            />
+                            <div className="space-y-1">
+                              <Label className="text-xs">Bill</Label>
+                              <Input
+                                type="file"
+                                accept="image/jpeg,image/png,image/jpg,image/webp,application/pdf"
+                                onChange={(e) => setBillFile(e.target.files?.[0] || null)}
+                                className="cursor-pointer text-xs h-8"
+                              />
+                              {(item as any).attachment_url && (
+                                <a 
+                                  href={(item as any).attachment_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-xs text-primary hover:underline"
+                                >
+                                  <FileText className="h-3 w-3" />
+                                  Current Bill
+                                </a>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Warranty</Label>
+                              <Input
+                                type="file"
+                                accept="image/jpeg,image/png,image/jpg,image/webp,application/pdf"
+                                onChange={(e) => setWarrantyFile(e.target.files?.[0] || null)}
+                                className="cursor-pointer text-xs h-8"
+                              />
+                              {(item as any).warranty_url && (
+                                <a 
+                                  href={(item as any).warranty_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-xs text-primary hover:underline"
+                                >
+                                  <FileText className="h-3 w-3" />
+                                  Current Warranty
+                                </a>
+                              )}
+                            </div>
+                          </div>
                         ) : (
-                          <span className="font-medium">{(item as any).expense_details}</span>
+                          <div className="space-y-1">
+                            <span className="font-medium block">{(item as any).expense_details}</span>
+                            <div className="flex gap-2">
+                              {(item as any).attachment_url && (
+                                <a 
+                                  href={(item as any).attachment_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-xs text-primary hover:underline"
+                                >
+                                  <Download className="h-3 w-3" />
+                                  Bill
+                                </a>
+                              )}
+                              {(item as any).warranty_url && (
+                                <a 
+                                  href={(item as any).warranty_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-xs text-primary hover:underline"
+                                >
+                                  <Download className="h-3 w-3" />
+                                  Warranty
+                                </a>
+                              )}
+                            </div>
+                          </div>
                         )}
                       </TableCell>
                       <TableCell>
