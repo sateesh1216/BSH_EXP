@@ -16,6 +16,7 @@ const ExpenseForm = () => {
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [paymentMode, setPaymentMode] = useState('');
   const [amount, setAmount] = useState('');
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -25,8 +26,30 @@ const ExpenseForm = () => {
       expense_details: string; 
       date: string; 
       payment_mode: string; 
-      amount: number 
+      amount: number;
+      attachment_file?: File;
     }) => {
+      let attachmentUrl = null;
+
+      // Upload file if provided
+      if (expenseData.attachment_file && user?.id) {
+        const fileExt = expenseData.attachment_file.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError, data: uploadData } = await supabase.storage
+          .from('expense-attachments')
+          .upload(fileName, expenseData.attachment_file);
+
+        if (uploadError) throw uploadError;
+        
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('expense-attachments')
+          .getPublicUrl(fileName);
+        
+        attachmentUrl = publicUrl;
+      }
+
       const { data, error } = await supabase
         .from('expenses')
         .insert([
@@ -36,6 +59,7 @@ const ExpenseForm = () => {
             date: expenseData.date,
             payment_mode: expenseData.payment_mode,
             amount: expenseData.amount,
+            attachment_url: attachmentUrl,
           },
         ])
         .select();
@@ -53,6 +77,7 @@ const ExpenseForm = () => {
       setDate(format(new Date(), 'yyyy-MM-dd'));
       setPaymentMode('');
       setAmount('');
+      setAttachmentFile(null);
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['monthly-stats'] });
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
@@ -132,11 +157,33 @@ const ExpenseForm = () => {
       return;
     }
 
+    // Validate file if provided
+    if (attachmentFile) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'application/pdf'];
+      if (!allowedTypes.includes(attachmentFile.type)) {
+        toast({
+          title: "Error",
+          description: "Only JPG, PNG, WEBP, and PDF files are allowed",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (attachmentFile.size > 5242880) { // 5MB
+        toast({
+          title: "Error",
+          description: "File size must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     addExpenseMutation.mutate({
       expense_details: sanitizedExpenseDetails,
       date,
       payment_mode: paymentMode,
       amount: parseFloat(amount),
+      attachment_file: attachmentFile || undefined,
     });
   };
 
@@ -197,6 +244,20 @@ const ExpenseForm = () => {
                 required
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="attachment">Attachment (Bill/Warranty)</Label>
+            <Input
+              id="attachment"
+              type="file"
+              accept="image/jpeg,image/png,image/jpg,image/webp,application/pdf"
+              onChange={(e) => setAttachmentFile(e.target.files?.[0] || null)}
+              className="cursor-pointer"
+            />
+            <p className="text-xs text-muted-foreground">
+              Optional: Upload bill or warranty card (JPG, PNG, WEBP, PDF - Max 5MB)
+            </p>
           </div>
           
           <Button 
