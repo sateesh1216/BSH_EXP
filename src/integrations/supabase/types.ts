@@ -94,6 +94,7 @@ export type Database = {
           payment_mode: string
           updated_at: string
           user_id: string
+          warranty_url: string | null
         }
         Insert: {
           amount?: number
@@ -105,6 +106,7 @@ export type Database = {
           payment_mode: string
           updated_at?: string
           user_id: string
+          warranty_url?: string | null
         }
         Update: {
           amount?: number
@@ -116,6 +118,7 @@ export type Database = {
           payment_mode?: string
           updated_at?: string
           user_id?: string
+          warranty_url?: string | null
         }
         Relationships: []
       }

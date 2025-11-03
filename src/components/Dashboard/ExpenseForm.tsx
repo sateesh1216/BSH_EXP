@@ -16,7 +16,8 @@ const ExpenseForm = () => {
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [paymentMode, setPaymentMode] = useState('');
   const [amount, setAmount] = useState('');
-  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [billFile, setBillFile] = useState<File | null>(null);
+  const [warrantyFile, setWarrantyFile] = useState<File | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -27,27 +28,46 @@ const ExpenseForm = () => {
       date: string; 
       payment_mode: string; 
       amount: number;
-      attachment_file?: File;
+      bill_file?: File;
+      warranty_file?: File;
     }) => {
-      let attachmentUrl = null;
+      let billUrl = null;
+      let warrantyUrl = null;
 
-      // Upload file if provided
-      if (expenseData.attachment_file && user?.id) {
-        const fileExt = expenseData.attachment_file.name.split('.').pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      // Upload bill file if provided
+      if (expenseData.bill_file && user?.id) {
+        const fileExt = expenseData.bill_file.name.split('.').pop();
+        const fileName = `${user.id}/bills/${Date.now()}.${fileExt}`;
         
-        const { error: uploadError, data: uploadData } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('expense-attachments')
-          .upload(fileName, expenseData.attachment_file);
+          .upload(fileName, expenseData.bill_file);
 
         if (uploadError) throw uploadError;
         
-        // Get public URL
         const { data: { publicUrl } } = supabase.storage
           .from('expense-attachments')
           .getPublicUrl(fileName);
         
-        attachmentUrl = publicUrl;
+        billUrl = publicUrl;
+      }
+
+      // Upload warranty file if provided
+      if (expenseData.warranty_file && user?.id) {
+        const fileExt = expenseData.warranty_file.name.split('.').pop();
+        const fileName = `${user.id}/warranties/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('expense-attachments')
+          .upload(fileName, expenseData.warranty_file);
+
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('expense-attachments')
+          .getPublicUrl(fileName);
+        
+        warrantyUrl = publicUrl;
       }
 
       const { data, error } = await supabase
@@ -59,7 +79,8 @@ const ExpenseForm = () => {
             date: expenseData.date,
             payment_mode: expenseData.payment_mode,
             amount: expenseData.amount,
-            attachment_url: attachmentUrl,
+            attachment_url: billUrl,
+            warranty_url: warrantyUrl,
           },
         ])
         .select();
@@ -77,7 +98,8 @@ const ExpenseForm = () => {
       setDate(format(new Date(), 'yyyy-MM-dd'));
       setPaymentMode('');
       setAmount('');
-      setAttachmentFile(null);
+      setBillFile(null);
+      setWarrantyFile(null);
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['monthly-stats'] });
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
@@ -157,21 +179,42 @@ const ExpenseForm = () => {
       return;
     }
 
-    // Validate file if provided
-    if (attachmentFile) {
+    // Validate bill file if provided
+    if (billFile) {
       const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'application/pdf'];
-      if (!allowedTypes.includes(attachmentFile.type)) {
+      if (!allowedTypes.includes(billFile.type)) {
         toast({
           title: "Error",
-          description: "Only JPG, PNG, WEBP, and PDF files are allowed",
+          description: "Bill: Only JPG, PNG, WEBP, and PDF files are allowed",
           variant: "destructive",
         });
         return;
       }
-      if (attachmentFile.size > 5242880) { // 5MB
+      if (billFile.size > 5242880) { // 5MB
         toast({
           title: "Error",
-          description: "File size must be less than 5MB",
+          description: "Bill: File size must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Validate warranty file if provided
+    if (warrantyFile) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'application/pdf'];
+      if (!allowedTypes.includes(warrantyFile.type)) {
+        toast({
+          title: "Error",
+          description: "Warranty: Only JPG, PNG, WEBP, and PDF files are allowed",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (warrantyFile.size > 5242880) { // 5MB
+        toast({
+          title: "Error",
+          description: "Warranty: File size must be less than 5MB",
           variant: "destructive",
         });
         return;
@@ -183,7 +226,8 @@ const ExpenseForm = () => {
       date,
       payment_mode: paymentMode,
       amount: parseFloat(amount),
-      attachment_file: attachmentFile || undefined,
+      bill_file: billFile || undefined,
+      warranty_file: warrantyFile || undefined,
     });
   };
 
@@ -246,18 +290,34 @@ const ExpenseForm = () => {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="attachment">Attachment (Bill/Warranty)</Label>
-            <Input
-              id="attachment"
-              type="file"
-              accept="image/jpeg,image/png,image/jpg,image/webp,application/pdf"
-              onChange={(e) => setAttachmentFile(e.target.files?.[0] || null)}
-              className="cursor-pointer"
-            />
-            <p className="text-xs text-muted-foreground">
-              Optional: Upload bill or warranty card (JPG, PNG, WEBP, PDF - Max 5MB)
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="bill">Bill Attachment</Label>
+              <Input
+                id="bill"
+                type="file"
+                accept="image/jpeg,image/png,image/jpg,image/webp,application/pdf"
+                onChange={(e) => setBillFile(e.target.files?.[0] || null)}
+                className="cursor-pointer"
+              />
+              <p className="text-xs text-muted-foreground">
+                Optional: Upload bill (JPG, PNG, WEBP, PDF - Max 5MB)
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="warranty">Warranty Card</Label>
+              <Input
+                id="warranty"
+                type="file"
+                accept="image/jpeg,image/png,image/jpg,image/webp,application/pdf"
+                onChange={(e) => setWarrantyFile(e.target.files?.[0] || null)}
+                className="cursor-pointer"
+              />
+              <p className="text-xs text-muted-foreground">
+                Optional: Upload warranty card (JPG, PNG, WEBP, PDF - Max 5MB)
+              </p>
+            </div>
           </div>
           
           <Button 
