@@ -424,18 +424,18 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm }: Ed
                             </div>
                           </div>
                         ) : (
-                          <div className="space-y-1">
+                          <div className="space-y-2">
                             <span className="font-medium block">{(item as any).expense_details}</span>
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                               {(item as any).attachment_url && (
                                 <a 
                                   href={(item as any).attachment_url} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
-                                  className="flex items-center gap-1 text-xs text-primary hover:underline"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition-colors"
                                 >
-                                  <Download className="h-3 w-3" />
-                                  Bill
+                                  <FileText className="h-3.5 w-3.5" />
+                                  View Bill
                                 </a>
                               )}
                               {(item as any).warranty_url && (
@@ -443,10 +443,10 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm }: Ed
                                   href={(item as any).warranty_url} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
-                                  className="flex items-center gap-1 text-xs text-primary hover:underline"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"
                                 >
-                                  <Download className="h-3 w-3" />
-                                  Warranty
+                                  <FileText className="h-3.5 w-3.5" />
+                                  View Warranty
                                 </a>
                               )}
                             </div>
