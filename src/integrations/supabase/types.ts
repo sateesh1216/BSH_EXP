@@ -10,253 +10,20 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
-      audit_logs: {
-        Row: {
-          action: string
-          created_at: string | null
-          id: string
-          ip_address: string | null
-          new_values: Json | null
-          old_values: Json | null
-          record_id: string | null
-          table_name: string
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          action: string
-          created_at?: string | null
-          id?: string
-          ip_address?: string | null
-          new_values?: Json | null
-          old_values?: Json | null
-          record_id?: string | null
-          table_name: string
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          action?: string
-          created_at?: string | null
-          id?: string
-          ip_address?: string | null
-          new_values?: Json | null
-          old_values?: Json | null
-          record_id?: string | null
-          table_name?: string
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      auth_rate_limits: {
-        Row: {
-          attempt_count: number | null
-          blocked_until: string | null
-          created_at: string | null
-          email: string | null
-          id: string
-          ip_address: unknown
-          last_attempt: string | null
-        }
-        Insert: {
-          attempt_count?: number | null
-          blocked_until?: string | null
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          ip_address: unknown
-          last_attempt?: string | null
-        }
-        Update: {
-          attempt_count?: number | null
-          blocked_until?: string | null
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          ip_address?: unknown
-          last_attempt?: string | null
-        }
-        Relationships: []
-      }
-      expenses: {
-        Row: {
-          amount: number
-          attachment_url: string | null
-          created_at: string
-          date: string
-          expense_details: string
-          id: string
-          payment_mode: string
-          updated_at: string
-          user_id: string
-          warranty_url: string | null
-        }
-        Insert: {
-          amount?: number
-          attachment_url?: string | null
-          created_at?: string
-          date: string
-          expense_details: string
-          id?: string
-          payment_mode: string
-          updated_at?: string
-          user_id: string
-          warranty_url?: string | null
-        }
-        Update: {
-          amount?: number
-          attachment_url?: string | null
-          created_at?: string
-          date?: string
-          expense_details?: string
-          id?: string
-          payment_mode?: string
-          updated_at?: string
-          user_id?: string
-          warranty_url?: string | null
-        }
-        Relationships: []
-      }
-      income: {
-        Row: {
-          amount: number
-          created_at: string
-          date: string
-          id: string
-          source: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          amount?: number
-          created_at?: string
-          date: string
-          id?: string
-          source: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          date?: string
-          id?: string
-          source?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          created_at: string
-          email: string | null
-          full_name: string | null
-          id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          email?: string | null
-          full_name?: string | null
-          id?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string
-          email?: string | null
-          full_name?: string | null
-          id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      savings: {
-        Row: {
-          amount: number
-          created_at: string
-          date: string
-          details: string | null
-          id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          amount?: number
-          created_at?: string
-          date: string
-          details?: string | null
-          id?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          date?: string
-          details?: string | null
-          id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_roles: {
-        Row: {
-          created_at: string
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      check_auth_rate_limit: {
-        Args: {
-          _email?: string
-          _ip_address: unknown
-          _max_attempts?: number
-          _window_minutes?: number
-        }
-        Returns: boolean
-      }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      app_role: "admin" | "user"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -383,8 +150,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["admin", "user"],
-    },
+    Enums: {},
   },
 } as const
