@@ -14,7 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      expenses: {
+        Row: {
+          amount: number
+          attachment_url: string | null
+          created_at: string
+          date: string
+          expense_details: string
+          id: string
+          payment_mode: string
+          user_id: string
+          warranty_url: string | null
+        }
+        Insert: {
+          amount: number
+          attachment_url?: string | null
+          created_at?: string
+          date: string
+          expense_details: string
+          id?: string
+          payment_mode: string
+          user_id: string
+          warranty_url?: string | null
+        }
+        Update: {
+          amount?: number
+          attachment_url?: string | null
+          created_at?: string
+          date?: string
+          expense_details?: string
+          id?: string
+          payment_mode?: string
+          user_id?: string
+          warranty_url?: string | null
+        }
+        Relationships: []
+      }
+      income: {
+        Row: {
+          amount: number
+          created_at: string
+          date: string
+          id: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          date: string
+          id?: string
+          source: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          date?: string
+          id?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      savings: {
+        Row: {
+          amount: number
+          created_at: string
+          date: string
+          details: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          date: string
+          details: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          date?: string
+          details?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
