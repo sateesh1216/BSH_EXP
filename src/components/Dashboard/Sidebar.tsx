@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, PiggyBank, BarChart3, Calendar, Download, Upload } from 'lucide-react';
-import { format } from 'date-fns';
+import { TrendingUp, TrendingDown, PiggyBank, BarChart3, Calendar, Download, Upload, Shield, Key } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SidebarProps {
   activeSection: string;
@@ -21,6 +22,8 @@ const Sidebar = ({
   selectedYear,
   setSelectedYear
 }: SidebarProps) => {
+  const { isAdmin } = useAuth();
+
   const sections = [
     { id: 'income', label: 'Income', icon: TrendingUp, color: 'text-expense-green' },
     { id: 'expenses', label: 'Expenses', icon: TrendingDown, color: 'text-expense-red' },
@@ -111,6 +114,27 @@ const Sidebar = ({
               </Button>
             );
           })}
+        </div>
+      </Card>
+
+      {/* Profile Section */}
+      <Card className="p-4">
+        <h3 className="font-semibold mb-4">Account</h3>
+        <div className="space-y-2">
+          <Link to="/change-password">
+            <Button variant="ghost" className="w-full justify-start gap-3 h-12">
+              <Key className="h-5 w-5 text-muted-foreground" />
+              <span className="font-medium">Change Password</span>
+            </Button>
+          </Link>
+          {isAdmin && (
+            <Link to="/admin">
+              <Button variant="ghost" className="w-full justify-start gap-3 h-12">
+                <Shield className="h-5 w-5 text-primary" />
+                <span className="font-medium">Admin Panel</span>
+              </Button>
+            </Link>
+          )}
         </div>
       </Card>
     </div>

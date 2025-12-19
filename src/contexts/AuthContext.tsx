@@ -12,6 +12,7 @@ interface AuthContextType {
   isAdmin: boolean;
   failedAttempts: number;
   isBlocked: boolean;
+  mustChangePassword: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,30 +36,66 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
+
+  const checkUserRole = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+      setIsAdmin(data?.role === 'admin');
+    } catch {
+      setIsAdmin(false);
+    }
+  };
+
+  const checkMustChangePassword = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('must_change_password')
+        .eq('user_id', userId)
+        .single();
+      setMustChangePassword(data?.must_change_password || false);
+    } catch {
+      setMustChangePassword(false);
+    }
+  };
+
+  const recordLoginHistory = async (userId: string) => {
+    try {
+      await supabase.from('login_history').insert({
+        user_id: userId,
+        user_agent: navigator.userAgent,
+      });
+    } catch (error) {
+      console.error('Error recording login history:', error);
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Check user role
-          setTimeout(async () => {
-            try {
-              const { data } = await supabase
-                .from('user_roles')
-                .select('role')
-                .eq('user_id', session.user.id)
-                .single();
-              setIsAdmin(data?.role === 'admin');
-            } catch (error) {
-              setIsAdmin(false);
+          // Use setTimeout to avoid deadlock
+          setTimeout(() => {
+            checkUserRole(session.user.id);
+            checkMustChangePassword(session.user.id);
+            
+            // Record login only on sign in
+            if (event === 'SIGNED_IN') {
+              recordLoginHistory(session.user.id);
             }
           }, 0);
         } else {
           setIsAdmin(false);
+          setMustChangePassword(false);
         }
         
         setLoading(false);
@@ -69,6 +106,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        checkUserRole(session.user.id);
+        checkMustChangePassword(session.user.id);
+      }
+      
       setLoading(false);
     });
 
@@ -131,7 +174,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return { error: { message: 'Invalid credentials' } }; // Don't reveal password requirements on login
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error, data } = await supabase.auth.signInWithPassword({
       email: sanitizedEmail,
       password,
     });
@@ -158,6 +201,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Reset failed attempts on successful login
     setFailedAttempts(0);
     setIsBlocked(false);
+
+    // Check if user account is active
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_active')
+        .eq('user_id', data.user.id)
+        .single();
+
+      if (profile && !profile.is_active) {
+        await supabase.auth.signOut();
+        return { error: { message: 'Your account has been deactivated. Please contact an administrator.' } };
+      }
+    }
     
     return { error };
   };
@@ -176,6 +233,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isAdmin,
     failedAttempts,
     isBlocked,
+    mustChangePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
