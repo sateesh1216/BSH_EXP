@@ -136,6 +136,10 @@ const Sidebar = ({
             </Link>
           )}
         </div>
+        {/* Admin Status Debug */}
+        <div className="mt-4 pt-4 border-t border-border text-xs text-muted-foreground">
+          <p>Admin status: <span className={isAdmin ? 'text-green-500 font-medium' : 'text-red-500'}>{isAdmin ? 'Yes' : 'No'}</span></p>
+        </div>
       </Card>
     </div>
   );
