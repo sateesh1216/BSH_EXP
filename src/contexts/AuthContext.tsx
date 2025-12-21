@@ -40,12 +40,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const checkUserRole = async (userId: string) => {
     try {
-      const { data } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .single();
-      setIsAdmin(data?.role === 'admin');
+      const { data, error } = await supabase.rpc('is_admin', { _user_id: userId });
+      if (error) throw error;
+      setIsAdmin(Boolean(data));
     } catch {
       setIsAdmin(false);
     }
