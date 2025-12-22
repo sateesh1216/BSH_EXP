@@ -4,6 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TrendingUp, TrendingDown, PiggyBank, BarChart3, Calendar, Download, Upload, Shield, Key } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SidebarProps {
   activeSection: string;
@@ -22,7 +24,22 @@ const Sidebar = ({
   selectedYear,
   setSelectedYear
 }: SidebarProps) => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
+  const [dbRole, setDbRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkDbRole = async () => {
+      if (user) {
+        const { data } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+        setDbRole(data?.role || 'none');
+      }
+    };
+    checkDbRole();
+  }, [user]);
 
   const sections = [
     { id: 'income', label: 'Income', icon: TrendingUp, color: 'text-expense-green' },
@@ -137,7 +154,9 @@ const Sidebar = ({
           )}
         </div>
         {/* Admin Status Debug */}
-        <div className="mt-4 pt-4 border-t border-border text-xs text-muted-foreground">
+        <div className="mt-4 pt-4 border-t border-border text-xs text-muted-foreground space-y-1">
+          <p className="truncate">Email: {user?.email || 'Not signed in'}</p>
+          <p>DB Role: <span className={dbRole === 'admin' ? 'text-expense-green font-medium' : 'text-expense-red font-medium'}>{dbRole || 'checking...'}</span></p>
           <p>
             Admin status:{" "}
             <span className={isAdmin ? 'text-expense-green font-medium' : 'text-expense-red font-medium'}>
