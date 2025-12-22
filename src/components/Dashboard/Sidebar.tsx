@@ -134,6 +134,19 @@ const Sidebar = ({
         </div>
       </Card>
 
+      {/* Admin Panel - Only visible for admins */}
+      {isAdmin && (
+        <Card className="p-4">
+          <h3 className="font-semibold mb-4">Administration</h3>
+          <Link to="/admin">
+            <Button variant="default" className="w-full justify-start gap-3 h-12">
+              <Shield className="h-5 w-5" />
+              <span className="font-medium">Admin Panel</span>
+            </Button>
+          </Link>
+        </Card>
+      )}
+
       {/* Profile Section */}
       <Card className="p-4">
         <h3 className="font-semibold mb-4">Account</h3>
@@ -144,14 +157,6 @@ const Sidebar = ({
               <span className="font-medium">Change Password</span>
             </Button>
           </Link>
-          {isAdmin && (
-            <Link to="/admin">
-              <Button variant="ghost" className="w-full justify-start gap-3 h-12">
-                <Shield className="h-5 w-5 text-primary" />
-                <span className="font-medium">Admin Panel</span>
-              </Button>
-            </Link>
-          )}
         </div>
         {/* Admin Status Debug */}
         <div className="mt-4 pt-4 border-t border-border text-xs text-muted-foreground space-y-1">
