@@ -16,6 +16,7 @@ import EditableDataTable from '@/components/Dashboard/EditableDataTable';
 import Reports from '@/components/Dashboard/Reports';
 import DownloadData from '@/components/Dashboard/DownloadData';
 import DataUpload from '@/components/Dashboard/DataUpload';
+import DeleteData from '@/components/Dashboard/DeleteData';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -151,6 +152,8 @@ const Dashboard = () => {
           return <DownloadData />;
         case 'upload':
           return <DataUpload />;
+        case 'delete':
+          return <DeleteData />;
       default:
         return null;
     }

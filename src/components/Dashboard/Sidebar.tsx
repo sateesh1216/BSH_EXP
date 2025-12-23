@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, PiggyBank, BarChart3, Calendar, Download, Upload, Shield, Key } from 'lucide-react';
+import { TrendingUp, TrendingDown, PiggyBank, BarChart3, Calendar, Download, Upload, Shield, Key, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
@@ -48,6 +48,7 @@ const Sidebar = ({
     { id: 'reports', label: 'Reports', icon: BarChart3, color: 'text-primary' },
     { id: 'download', label: 'Download Data', icon: Download, color: 'text-primary' },
     { id: 'upload', label: 'Upload Data', icon: Upload, color: 'text-primary' },
+    { id: 'delete', label: 'Delete Data', icon: Trash2, color: 'text-destructive' },
   ];
 
   const currentYear = new Date().getFullYear();
