@@ -51,7 +51,8 @@ const Sidebar = ({
   ];
 
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  // Include years from 2 years in future to 5 years in past to handle all data scenarios
+  const years = Array.from({ length: 8 }, (_, i) => currentYear + 2 - i);
   const months = [
     { value: '01', label: 'January' },
     { value: '02', label: 'February' },
