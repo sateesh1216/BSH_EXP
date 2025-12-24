@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 const AdminDashboard = () => {
   const { getStats } = useAdminApi();
 
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading, error } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: getStats,
     refetchInterval: 30000, // Refresh every 30 seconds
@@ -50,6 +50,14 @@ const AdminDashboard = () => {
         <h2 className="text-2xl font-bold">Admin Dashboard</h2>
         <p className="text-muted-foreground">Overview of your expense management system</p>
       </div>
+
+      {error && (
+        <Card>
+          <CardContent className="pt-6 text-sm text-destructive">
+            Failed to load admin stats: {(error as Error).message}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((stat) => {

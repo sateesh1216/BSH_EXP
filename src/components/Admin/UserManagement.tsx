@@ -51,7 +51,7 @@ const UserManagement = () => {
   const [editUserActive, setEditUserActive] = useState(true);
   const [editUserRole, setEditUserRole] = useState<'admin' | 'user'>('user');
 
-  const { data: usersData, isLoading } = useQuery({
+  const { data: usersData, isLoading, error } = useQuery({
     queryKey: ['admin-users'],
     queryFn: getUsers,
   });
@@ -207,6 +207,10 @@ const UserManagement = () => {
                 <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
+          ) : error ? (
+            <div className="text-sm text-destructive">
+              Failed to load users: {(error as Error).message}
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -285,9 +289,16 @@ const UserManagement = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                  ))}
+                  {users.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                        No users found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
           )}
         </CardContent>
       </Card>

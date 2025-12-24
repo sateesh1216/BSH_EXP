@@ -121,10 +121,7 @@ const DeleteData = () => {
       });
 
       // Invalidate queries to refresh data
-      selectedTypes.forEach(type => {
-        queryClient.invalidateQueries({ queryKey: [type] });
-      });
-      queryClient.invalidateQueries({ queryKey: ['monthly-stats'] });
+      queryClient.invalidateQueries();
 
       setSelectedTypes([]);
     } catch (error: any) {
@@ -163,10 +160,7 @@ const DeleteData = () => {
       });
 
       // Invalidate all queries
-      allTypes.forEach(type => {
-        queryClient.invalidateQueries({ queryKey: [type] });
-      });
-      queryClient.invalidateQueries({ queryKey: ['monthly-stats'] });
+      queryClient.invalidateQueries();
 
     } catch (error: any) {
       toast({

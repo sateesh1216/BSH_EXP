@@ -50,12 +50,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const checkMustChangePassword = async (userId: string) => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('must_change_password')
         .eq('user_id', userId)
-        .single();
-      setMustChangePassword(data?.must_change_password || false);
+        .maybeSingle();
+
+      if (error) throw error;
+      setMustChangePassword(Boolean(data?.must_change_password));
     } catch {
       setMustChangePassword(false);
     }
@@ -99,16 +101,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     );
 
-    // Get existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Get existing session (handle broken/expired refresh tokens gracefully)
+    supabase.auth.getSession().then(async ({ data, error }) => {
+      if (error) {
+        // If the stored refresh token is invalid, clear auth state to avoid broken UI.
+        await supabase.auth.signOut();
+        setSession(null);
+        setUser(null);
+        setIsAdmin(false);
+        setMustChangePassword(false);
+        setLoading(false);
+        return;
+      }
+
+      const session = data.session;
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
         checkUserRole(session.user.id);
         checkMustChangePassword(session.user.id);
       }
-      
+
       setLoading(false);
     });
 
