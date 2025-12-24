@@ -21,7 +21,7 @@ interface LoginRecord {
 const LoginHistory = () => {
   const { getLoginHistory } = useAdminApi();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['admin-login-history'],
     queryFn: () => getLoginHistory(undefined, 100),
   });
@@ -50,6 +50,10 @@ const LoginHistory = () => {
               {[1, 2, 3, 4, 5].map((i) => (
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
+            </div>
+          ) : error ? (
+            <div className="text-sm text-destructive">
+              Failed to load login history: {(error as Error).message}
             </div>
           ) : (
             <Table>

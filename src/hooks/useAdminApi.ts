@@ -2,9 +2,15 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const useAdminApi = () => {
   const callAdminFunction = async (action: string, params: Record<string, unknown> = {}) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      throw new Error("Not authenticated");
+    const { data, error: sessionError } = await supabase.auth.getSession();
+    const session = data.session;
+
+    if (sessionError || !session) {
+      // Clear broken auth state (e.g., invalid refresh token) so the user can log in again.
+      if ((sessionError as any)?.code === "refresh_token_not_found") {
+        await supabase.auth.signOut();
+      }
+      throw new Error("Session expired. Please log in again.");
     }
 
     const response = await supabase.functions.invoke("admin-users", {
