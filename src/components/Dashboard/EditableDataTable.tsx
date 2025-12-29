@@ -17,9 +17,11 @@ interface EditableDataTableProps {
   selectedMonth: string;
   selectedYear: string;
   searchTerm?: string;
+  startDate?: Date;
+  endDate?: Date;
 }
 
-const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm }: EditableDataTableProps) => {
+const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, startDate, endDate }: EditableDataTableProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -30,6 +32,14 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm }: Ed
 
   // Calculate date range based on filters
   const getDateRange = () => {
+    // If custom date range is provided (for expenses), use it
+    if (type === 'expenses' && (startDate || endDate)) {
+      return {
+        start: startDate ? format(startDate, 'yyyy-MM-dd') : '2020-01-01',
+        end: endDate ? format(endDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
+      };
+    }
+
     if (selectedYear === 'all') {
       // Show all available data
       return {
@@ -58,7 +68,7 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm }: Ed
   const { start, end } = getDateRange();
 
   const { data, isLoading } = useQuery({
-    queryKey: [type, selectedYear, selectedMonth, searchTerm],
+    queryKey: [type, selectedYear, selectedMonth, searchTerm, startDate?.toISOString(), endDate?.toISOString()],
     queryFn: async () => {
       let query = supabase
         .from(type)

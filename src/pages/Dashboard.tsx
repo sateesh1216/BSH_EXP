@@ -2,9 +2,12 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LogOut, TrendingUp, Search } from 'lucide-react';
+import { LogOut, TrendingUp, Search, CalendarIcon, X } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import Sidebar from '@/components/Dashboard/Sidebar';
@@ -24,6 +27,8 @@ const Dashboard = () => {
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MM'));
   const [selectedYear, setSelectedYear] = useState(format(new Date(), 'yyyy'));
   const [expenseSearchTerm, setExpenseSearchTerm] = useState('');
+  const [expenseStartDate, setExpenseStartDate] = useState<Date | undefined>(undefined);
+  const [expenseEndDate, setExpenseEndDate] = useState<Date | undefined>(undefined);
 
   // Calculate date range for expense search total
   const getDateRange = () => {
@@ -112,16 +117,84 @@ const Dashboard = () => {
         return (
           <div className="space-y-6">
             <ExpenseForm />
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="Search expenses (e.g., bike petrol, groceries...)"
+                  placeholder="Search expenses..."
                   value={expenseSearchTerm}
                   onChange={(e) => setExpenseSearchTerm(e.target.value)}
-                  className="pl-10 max-w-md"
+                  className="pl-10 w-[200px]"
                 />
               </div>
+              
+              {/* Date Range Filter */}
+              <div className="flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-[140px] justify-start text-left font-normal",
+                        !expenseStartDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {expenseStartDate ? format(expenseStartDate, "dd/MM/yyyy") : "From Date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={expenseStartDate}
+                      onSelect={setExpenseStartDate}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                <span className="text-muted-foreground">to</span>
+                
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-[140px] justify-start text-left font-normal",
+                        !expenseEndDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {expenseEndDate ? format(expenseEndDate, "dd/MM/yyyy") : "To Date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={expenseEndDate}
+                      onSelect={setExpenseEndDate}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                {(expenseStartDate || expenseEndDate) && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setExpenseStartDate(undefined);
+                      setExpenseEndDate(undefined);
+                    }}
+                    className="h-9 w-9"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              
               {expenseSearchTerm.trim() && filteredExpensesTotal !== undefined && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-card border rounded-lg">
                   <span className="text-sm text-muted-foreground">Total:</span>
@@ -136,6 +209,8 @@ const Dashboard = () => {
               selectedMonth={selectedMonth} 
               selectedYear={selectedYear}
               searchTerm={expenseSearchTerm}
+              startDate={expenseStartDate}
+              endDate={expenseEndDate}
             />
           </div>
         );
