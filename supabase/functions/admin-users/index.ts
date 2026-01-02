@@ -202,24 +202,48 @@ serve(async (req) => {
       }
 
       case "get_users": {
-        const { data: users } = await adminClient
+        // NOTE: PostgREST embedded selects (e.g. user_roles(role)) require a FK relationship.
+        // Our schema doesn't have a FK between profiles.user_id and user_roles.user_id,
+        // so we fetch roles separately and merge.
+        const { data: profiles, error: profilesError } = await adminClient
           .from("profiles")
-          .select(`
-            *,
-            user_roles (role)
-          `)
+          .select("*")
           .order("created_at", { ascending: false });
+
+        if (profilesError) {
+          console.error("get_users profilesError:", profilesError);
+          return new Response(JSON.stringify({ error: profilesError.message }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const userIds = (profiles || []).map((p) => p.user_id).filter(Boolean);
+
+        const { data: rolesData, error: rolesError } = userIds.length
+          ? await adminClient.from("user_roles").select("user_id, role").in("user_id", userIds)
+          : { data: [], error: null };
+
+        if (rolesError) {
+          console.error("get_users rolesError:", rolesError);
+          return new Response(JSON.stringify({ error: rolesError.message }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const roleByUserId = new Map((rolesData || []).map((r) => [r.user_id, r.role]));
 
         // Get login counts for each user
         const usersWithStats = await Promise.all(
-          (users || []).map(async (profile) => {
+          (profiles || []).map(async (profile) => {
             const { data: lastLogin } = await adminClient
               .from("login_history")
               .select("login_at")
               .eq("user_id", profile.user_id)
               .order("login_at", { ascending: false })
               .limit(1)
-              .single();
+              .maybeSingle();
 
             const { count: loginCount } = await adminClient
               .from("login_history")
@@ -228,7 +252,7 @@ serve(async (req) => {
 
             return {
               ...profile,
-              role: profile.user_roles?.[0]?.role || "user",
+              role: roleByUserId.get(profile.user_id) || "user",
               last_login: lastLogin?.login_at || null,
               login_count: loginCount || 0,
             };
