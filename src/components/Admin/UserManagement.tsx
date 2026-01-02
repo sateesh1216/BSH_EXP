@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminApi } from '@/hooks/useAdminApi';
-import { UserPlus, Edit, Trash2, Key, Eye, Copy, CheckCircle } from 'lucide-react';
+import { UserPlus, Edit, Trash2, Key, Eye, Copy, CheckCircle, Pause, Play } from 'lucide-react';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import UserFinancialData from './UserFinancialData';
@@ -83,6 +83,17 @@ const UserManagement = () => {
     },
     onError: (error: Error) => {
       toast({ title: 'Error updating user', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const toggleStatusMutation = useMutation({
+    mutationFn: (user: UserProfile) => updateUser(user.user_id, user.full_name || '', !user.is_active, user.role as 'admin' | 'user'),
+    onSuccess: (_, user) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      toast({ title: user.is_active ? 'User paused successfully' : 'User activated successfully' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error updating user status', description: error.message, variant: 'destructive' });
     },
   });
 
@@ -257,6 +268,15 @@ const UserManagement = () => {
                           title="View Data"
                         >
                           <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => toggleStatusMutation.mutate(user)}
+                          title={user.is_active ? "Pause User" : "Activate User"}
+                          disabled={toggleStatusMutation.isPending}
+                        >
+                          {user.is_active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 text-green-500" />}
                         </Button>
                         <Button
                           variant="ghost"
