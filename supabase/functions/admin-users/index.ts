@@ -246,10 +246,7 @@ serve(async (req) => {
         
         let query = adminClient
           .from("login_history")
-          .select(`
-            *,
-            profiles (email, full_name)
-          `)
+          .select("*")
           .order("login_at", { ascending: false })
           .limit(limit);
 
@@ -257,9 +254,27 @@ serve(async (req) => {
           query = query.eq("user_id", user_id);
         }
 
-        const { data: history } = await query;
+        const { data: historyData, error: historyError } = await query;
+        
+        console.log("Login history query result:", { historyData, historyError });
 
-        return new Response(JSON.stringify({ history: history || [] }), {
+        // Fetch profile data for each login record
+        const historyWithProfiles = await Promise.all(
+          (historyData || []).map(async (record) => {
+            const { data: profile } = await adminClient
+              .from("profiles")
+              .select("email, full_name")
+              .eq("user_id", record.user_id)
+              .single();
+            
+            return {
+              ...record,
+              profiles: profile,
+            };
+          })
+        );
+
+        return new Response(JSON.stringify({ history: historyWithProfiles }), {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
