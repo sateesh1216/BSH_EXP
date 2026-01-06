@@ -173,10 +173,10 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold">Admin Dashboard</h2>
-        <p className="text-muted-foreground">Overview of your expense management system</p>
+        <h2 className="text-xl sm:text-2xl font-bold">Admin Dashboard</h2>
+        <p className="text-sm sm:text-base text-muted-foreground">Overview of your expense management system</p>
       </div>
 
       {error && (
@@ -187,7 +187,7 @@ const AdminDashboard = () => {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -200,23 +200,23 @@ const AdminDashboard = () => {
               }`}
               onClick={() => handleCardClick(stat)}
             >
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-4 pb-1 sm:pb-2">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                   {stat.title}
                 </CardTitle>
-                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                  <Icon className={`h-5 w-5 ${stat.color}`} />
+                <div className={`p-1.5 sm:p-2 rounded-lg ${stat.bgColor}`}>
+                  <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${stat.color}`} />
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 sm:p-4 pt-0 sm:pt-0">
                 <div className="flex items-center justify-between">
                   {statsLoading ? (
-                    <Skeleton className="h-8 w-20" />
+                    <Skeleton className="h-6 sm:h-8 w-16 sm:w-20" />
                   ) : (
-                    <p className="text-3xl font-bold">{stat.value}</p>
+                    <p className="text-xl sm:text-3xl font-bold">{stat.value}</p>
                   )}
                   {stat.clickable && (
-                    <ChevronRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
                 </div>
               </CardContent>
@@ -225,23 +225,23 @@ const AdminDashboard = () => {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+          <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-4">
+            <CardTitle className="text-base sm:text-lg">Quick Actions</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-muted-foreground text-sm">
+          <CardContent className="p-4 sm:p-6 pt-0 space-y-3">
+            <p className="text-muted-foreground text-xs sm:text-sm">
               Use the sidebar navigation to manage users, view login history, and generate reports.
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>System Information</CardTitle>
+          <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-4">
+            <CardTitle className="text-base sm:text-lg">System Information</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+          <CardContent className="p-4 sm:p-6 pt-0 space-y-2 text-xs sm:text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Application</span>
               <span className="font-medium">BSH EXPENSES</span>

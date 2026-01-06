@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LogOut, TrendingUp, Search, CalendarIcon, X } from 'lucide-react';
+import { LogOut, TrendingUp, Search, CalendarIcon, X, Menu } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -10,6 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import Sidebar from '@/components/Dashboard/Sidebar';
 import MonthlySummaryCards from '@/components/Dashboard/MonthlySummaryCards';
 import IncomeForm from '@/components/Dashboard/IncomeForm';
@@ -234,23 +235,47 @@ const Dashboard = () => {
     }
   };
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-transparent">
       {/* Professional Header */}
       <header className="glass-effect border-b border-border/50 sticky top-0 z-50 backdrop-blur-md">
-        <div className="px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center gap-3 animate-fade-in">
-              <div className="p-2 bg-gradient-primary rounded-xl shadow-glow">
-                <TrendingUp className="h-6 w-6 text-white" />
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-3 sm:py-4">
+            <div className="flex items-center gap-2 sm:gap-3 animate-fade-in">
+              {/* Mobile Menu Button */}
+              <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="lg:hidden shrink-0">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-80">
+                  <Sidebar
+                    activeSection={activeSection}
+                    setActiveSection={(section) => {
+                      setActiveSection(section);
+                      setSidebarOpen(false);
+                    }}
+                    selectedMonth={selectedMonth}
+                    setSelectedMonth={setSelectedMonth}
+                    selectedYear={selectedYear}
+                    setSelectedYear={setSelectedYear}
+                  />
+                </SheetContent>
+              </Sheet>
+              
+              <div className="p-1.5 sm:p-2 bg-gradient-primary rounded-lg sm:rounded-xl shadow-glow">
+                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gradient">BSH EXPENSES</h1>
-                <p className="text-xs text-muted-foreground">Financial Management System</p>
+                <h1 className="text-lg sm:text-2xl font-bold text-gradient">BSH EXPENSES</h1>
+                <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Financial Management System</p>
               </div>
             </div>
-            <div className="flex items-center gap-4 animate-fade-in [animation-delay:0.2s]">
-              <span className="text-sm text-muted-foreground hidden sm:block">
+            <div className="flex items-center gap-2 sm:gap-4 animate-fade-in [animation-delay:0.2s]">
+              <span className="text-sm text-muted-foreground hidden md:block">
                 Welcome back! Track your finances professionally.
               </span>
               <Button 
@@ -259,8 +284,8 @@ const Dashboard = () => {
                 size="sm"
                 className="hover-lift border-border/40 bg-card/50"
               >
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
+                <LogOut className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
@@ -269,19 +294,21 @@ const Dashboard = () => {
 
       {/* Main Layout */}
       <div className="flex">
-        {/* Sidebar */}
-        <Sidebar
-          activeSection={activeSection}
-          setActiveSection={setActiveSection}
-          selectedMonth={selectedMonth}
-          setSelectedMonth={setSelectedMonth}
-          selectedYear={selectedYear}
-          setSelectedYear={setSelectedYear}
-        />
+        {/* Sidebar - Hidden on mobile */}
+        <div className="hidden lg:block">
+          <Sidebar
+            activeSection={activeSection}
+            setActiveSection={setActiveSection}
+            selectedMonth={selectedMonth}
+            setSelectedMonth={setSelectedMonth}
+            selectedYear={selectedYear}
+            setSelectedYear={setSelectedYear}
+          />
+        </div>
 
         {/* Main Content */}
-        <main className="flex-1 p-6 lg:p-8 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-8">
             {/* Summary Cards */}
             <div className="animate-slide-up">
               <MonthlySummaryCards selectedMonth={selectedMonth} selectedYear={selectedYear} />
