@@ -70,19 +70,19 @@ const Sidebar = ({
   ];
 
   return (
-    <div className="w-80 bg-card border-r border-border h-full p-6 space-y-6">
+    <div className="w-80 bg-card border-r border-border h-full lg:h-[calc(100vh-73px)] p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
       {/* Filter Section */}
-      <Card className="p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Calendar className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold">Filter Data</h3>
+      <Card className="p-3 sm:p-4">
+        <div className="flex items-center gap-2 mb-3 sm:mb-4">
+          <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+          <h3 className="font-semibold text-sm sm:text-base">Filter Data</h3>
         </div>
         
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <div>
-            <label className="text-sm font-medium mb-2 block">Year</label>
+            <label className="text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 block">Year</label>
             <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9 sm:h-10">
                 <SelectValue placeholder="Select year" />
               </SelectTrigger>
                <SelectContent>
@@ -97,9 +97,9 @@ const Sidebar = ({
           </div>
           
           <div>
-            <label className="text-sm font-medium mb-2 block">Month</label>
+            <label className="text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 block">Month</label>
             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9 sm:h-10">
                 <SelectValue placeholder="Select month" />
               </SelectTrigger>
               <SelectContent>
@@ -116,20 +116,20 @@ const Sidebar = ({
       </Card>
 
       {/* Navigation Section */}
-      <Card className="p-4">
-        <h3 className="font-semibold mb-4">Sections</h3>
-        <div className="space-y-2">
+      <Card className="p-3 sm:p-4">
+        <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Sections</h3>
+        <div className="space-y-1 sm:space-y-2">
           {sections.map((section) => {
             const Icon = section.icon;
             return (
               <Button
                 key={section.id}
                 variant={activeSection === section.id ? "default" : "ghost"}
-                className="w-full justify-start gap-3 h-12"
+                className="w-full justify-start gap-2 sm:gap-3 h-10 sm:h-12"
                 onClick={() => setActiveSection(section.id)}
               >
-                <Icon className={`h-5 w-5 ${section.color}`} />
-                <span className="font-medium">{section.label}</span>
+                <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${section.color}`} />
+                <span className="font-medium text-sm sm:text-base">{section.label}</span>
               </Button>
             );
           })}
@@ -138,30 +138,30 @@ const Sidebar = ({
 
       {/* Admin Panel - Only visible for admins */}
       {isAdmin && (
-        <Card className="p-4">
-          <h3 className="font-semibold mb-4">Administration</h3>
+        <Card className="p-3 sm:p-4">
+          <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Administration</h3>
           <Link to="/admin">
-            <Button variant="default" className="w-full justify-start gap-3 h-12">
-              <Shield className="h-5 w-5" />
-              <span className="font-medium">Admin Panel</span>
+            <Button variant="default" className="w-full justify-start gap-2 sm:gap-3 h-10 sm:h-12">
+              <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="font-medium text-sm sm:text-base">Admin Panel</span>
             </Button>
           </Link>
         </Card>
       )}
 
       {/* Profile Section */}
-      <Card className="p-4">
-        <h3 className="font-semibold mb-4">Account</h3>
-        <div className="space-y-2">
+      <Card className="p-3 sm:p-4">
+        <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Account</h3>
+        <div className="space-y-1 sm:space-y-2">
           <Link to="/change-password">
-            <Button variant="ghost" className="w-full justify-start gap-3 h-12">
-              <Key className="h-5 w-5 text-muted-foreground" />
-              <span className="font-medium">Change Password</span>
+            <Button variant="ghost" className="w-full justify-start gap-2 sm:gap-3 h-10 sm:h-12">
+              <Key className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+              <span className="font-medium text-sm sm:text-base">Change Password</span>
             </Button>
           </Link>
         </div>
         {/* Admin Status Debug */}
-        <div className="mt-4 pt-4 border-t border-border text-xs text-muted-foreground space-y-1">
+        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border text-[10px] sm:text-xs text-muted-foreground space-y-0.5 sm:space-y-1">
           <p className="truncate">Email: {user?.email || 'Not signed in'}</p>
           <p>DB Role: <span className={dbRole === 'admin' ? 'text-expense-green font-medium' : 'text-expense-red font-medium'}>{dbRole || 'checking...'}</span></p>
           <p>

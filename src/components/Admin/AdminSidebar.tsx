@@ -17,23 +17,23 @@ const AdminSidebar = ({ activeSection, setActiveSection }: AdminSidebarProps) =>
   ];
 
   return (
-    <div className="w-72 bg-card border-r border-border h-[calc(100vh-73px)] p-6">
-      <Card className="p-4">
-        <h3 className="font-semibold mb-4 text-muted-foreground uppercase text-xs tracking-wider">
+    <div className="w-72 bg-card border-r border-border h-full lg:h-[calc(100vh-73px)] p-4 sm:p-6 overflow-y-auto">
+      <Card className="p-3 sm:p-4">
+        <h3 className="font-semibold mb-3 sm:mb-4 text-muted-foreground uppercase text-xs tracking-wider">
           Admin Navigation
         </h3>
-        <div className="space-y-2">
+        <div className="space-y-1 sm:space-y-2">
           {sections.map((section) => {
             const Icon = section.icon;
             return (
               <Button
                 key={section.id}
                 variant={activeSection === section.id ? "default" : "ghost"}
-                className="w-full justify-start gap-3 h-11"
+                className="w-full justify-start gap-3 h-10 sm:h-11"
                 onClick={() => setActiveSection(section.id)}
               >
-                <Icon className="h-5 w-5" />
-                <span className="font-medium">{section.label}</span>
+                <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="font-medium text-sm sm:text-base">{section.label}</span>
               </Button>
             );
           })}
