@@ -58,7 +58,7 @@ const Dashboard = () => {
     }
   };
 
-  // Query for filtered expenses total
+  // Query for filtered expenses total (search term)
   const { data: filteredExpensesTotal } = useQuery({
     queryKey: ['filtered-expenses-total', selectedYear, selectedMonth, expenseSearchTerm],
     queryFn: async () => {
@@ -79,6 +79,35 @@ const Dashboard = () => {
       return data?.reduce((sum, expense) => sum + Number(expense.amount), 0) || 0;
     },
     enabled: !!user?.id && !!expenseSearchTerm.trim(),
+  });
+
+  // Query for date range expenses total
+  const { data: dateRangeExpensesTotal } = useQuery({
+    queryKey: ['date-range-expenses-total', expenseStartDate?.toISOString(), expenseEndDate?.toISOString(), expenseSearchTerm],
+    queryFn: async () => {
+      if (!expenseStartDate && !expenseEndDate) return 0;
+      
+      const start = expenseStartDate ? format(expenseStartDate, 'yyyy-MM-dd') : '2020-01-01';
+      const end = expenseEndDate ? format(expenseEndDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+      
+      let query = supabase
+        .from('expenses')
+        .select('amount')
+        .eq('user_id', user?.id)
+        .gte('date', start)
+        .lte('date', end);
+
+      // Include search term filter if present
+      if (expenseSearchTerm.trim()) {
+        query = query.ilike('expense_details', `%${expenseSearchTerm.trim()}%`);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      return data?.reduce((sum, expense) => sum + Number(expense.amount), 0) || 0;
+    },
+    enabled: !!user?.id && (!!expenseStartDate || !!expenseEndDate),
   });
 
   const formatCurrency = (amount: number) => {
@@ -196,7 +225,25 @@ const Dashboard = () => {
                 )}
               </div>
               
-              {expenseSearchTerm.trim() && filteredExpensesTotal !== undefined && (
+              {/* Date Range Total Display */}
+              {(expenseStartDate || expenseEndDate) && dateRangeExpensesTotal !== undefined && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-card border rounded-lg">
+                  <span className="text-sm text-muted-foreground">
+                    {expenseStartDate && expenseEndDate 
+                      ? `${format(expenseStartDate, 'dd/MM/yyyy')} - ${format(expenseEndDate, 'dd/MM/yyyy')}`
+                      : expenseStartDate 
+                        ? `From ${format(expenseStartDate, 'dd/MM/yyyy')}`
+                        : `To ${format(expenseEndDate!, 'dd/MM/yyyy')}`
+                    }:
+                  </span>
+                  <span className="text-sm font-semibold text-expense-red">
+                    {formatCurrency(dateRangeExpensesTotal)}
+                  </span>
+                </div>
+              )}
+              
+              {/* Search Term Total Display (when no date range) */}
+              {expenseSearchTerm.trim() && !expenseStartDate && !expenseEndDate && filteredExpensesTotal !== undefined && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-card border rounded-lg">
                   <span className="text-sm text-muted-foreground">Total:</span>
                   <span className="text-sm font-semibold text-expense-red">
