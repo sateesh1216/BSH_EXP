@@ -30,6 +30,14 @@ const Dashboard = () => {
   const [expenseSearchTerm, setExpenseSearchTerm] = useState('');
   const [expenseStartDate, setExpenseStartDate] = useState<Date | undefined>(undefined);
   const [expenseEndDate, setExpenseEndDate] = useState<Date | undefined>(undefined);
+  
+  // Income date range filter
+  const [incomeStartDate, setIncomeStartDate] = useState<Date | undefined>(undefined);
+  const [incomeEndDate, setIncomeEndDate] = useState<Date | undefined>(undefined);
+  
+  // Savings date range filter
+  const [savingsStartDate, setSavingsStartDate] = useState<Date | undefined>(undefined);
+  const [savingsEndDate, setSavingsEndDate] = useState<Date | undefined>(undefined);
 
   // Calculate date range for expense search total
   const getDateRange = () => {
@@ -97,7 +105,6 @@ const Dashboard = () => {
         .gte('date', start)
         .lte('date', end);
 
-      // Include search term filter if present
       if (expenseSearchTerm.trim()) {
         query = query.ilike('expense_details', `%${expenseSearchTerm.trim()}%`);
       }
@@ -108,6 +115,52 @@ const Dashboard = () => {
       return data?.reduce((sum, expense) => sum + Number(expense.amount), 0) || 0;
     },
     enabled: !!user?.id && (!!expenseStartDate || !!expenseEndDate),
+  });
+
+  // Query for date range income total
+  const { data: dateRangeIncomeTotal } = useQuery({
+    queryKey: ['date-range-income-total', incomeStartDate?.toISOString(), incomeEndDate?.toISOString()],
+    queryFn: async () => {
+      if (!incomeStartDate && !incomeEndDate) return 0;
+      
+      const start = incomeStartDate ? format(incomeStartDate, 'yyyy-MM-dd') : '2020-01-01';
+      const end = incomeEndDate ? format(incomeEndDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+      
+      const { data, error } = await supabase
+        .from('income')
+        .select('amount')
+        .eq('user_id', user?.id)
+        .gte('date', start)
+        .lte('date', end);
+
+      if (error) throw error;
+      
+      return data?.reduce((sum, income) => sum + Number(income.amount), 0) || 0;
+    },
+    enabled: !!user?.id && (!!incomeStartDate || !!incomeEndDate),
+  });
+
+  // Query for date range savings total
+  const { data: dateRangeSavingsTotal } = useQuery({
+    queryKey: ['date-range-savings-total', savingsStartDate?.toISOString(), savingsEndDate?.toISOString()],
+    queryFn: async () => {
+      if (!savingsStartDate && !savingsEndDate) return 0;
+      
+      const start = savingsStartDate ? format(savingsStartDate, 'yyyy-MM-dd') : '2020-01-01';
+      const end = savingsEndDate ? format(savingsEndDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+      
+      const { data, error } = await supabase
+        .from('savings')
+        .select('amount')
+        .eq('user_id', user?.id)
+        .gte('date', start)
+        .lte('date', end);
+
+      if (error) throw error;
+      
+      return data?.reduce((sum, saving) => sum + Number(saving.amount), 0) || 0;
+    },
+    enabled: !!user?.id && (!!savingsStartDate || !!savingsEndDate),
   });
 
   const formatCurrency = (amount: number) => {
@@ -140,7 +193,98 @@ const Dashboard = () => {
         return (
           <div className="space-y-6">
             <IncomeForm />
-            <EditableDataTable type="income" selectedMonth={selectedMonth} selectedYear={selectedYear} />
+            {/* Date Range Filter for Income */}
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-[140px] justify-start text-left font-normal",
+                        !incomeStartDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {incomeStartDate ? format(incomeStartDate, "dd/MM/yyyy") : "From Date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={incomeStartDate}
+                      onSelect={setIncomeStartDate}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                <span className="text-muted-foreground">to</span>
+                
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-[140px] justify-start text-left font-normal",
+                        !incomeEndDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {incomeEndDate ? format(incomeEndDate, "dd/MM/yyyy") : "To Date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={incomeEndDate}
+                      onSelect={setIncomeEndDate}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                {(incomeStartDate || incomeEndDate) && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setIncomeStartDate(undefined);
+                      setIncomeEndDate(undefined);
+                    }}
+                    className="h-9 w-9"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              
+              {/* Date Range Total Display */}
+              {(incomeStartDate || incomeEndDate) && dateRangeIncomeTotal !== undefined && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-card border rounded-lg">
+                  <span className="text-sm text-muted-foreground">
+                    {incomeStartDate && incomeEndDate 
+                      ? `${format(incomeStartDate, 'dd/MM/yyyy')} - ${format(incomeEndDate, 'dd/MM/yyyy')}`
+                      : incomeStartDate 
+                        ? `From ${format(incomeStartDate, 'dd/MM/yyyy')}`
+                        : `To ${format(incomeEndDate!, 'dd/MM/yyyy')}`
+                    }:
+                  </span>
+                  <span className="text-sm font-semibold text-income-green">
+                    {formatCurrency(dateRangeIncomeTotal)}
+                  </span>
+                </div>
+              )}
+            </div>
+            <EditableDataTable 
+              type="income" 
+              selectedMonth={selectedMonth} 
+              selectedYear={selectedYear}
+              startDate={incomeStartDate}
+              endDate={incomeEndDate}
+            />
           </div>
         );
       case 'expenses':
@@ -266,7 +410,98 @@ const Dashboard = () => {
         return (
           <div className="space-y-6">
             <SavingsForm />
-            <EditableDataTable type="savings" selectedMonth={selectedMonth} selectedYear={selectedYear} />
+            {/* Date Range Filter for Savings */}
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-[140px] justify-start text-left font-normal",
+                        !savingsStartDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {savingsStartDate ? format(savingsStartDate, "dd/MM/yyyy") : "From Date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={savingsStartDate}
+                      onSelect={setSavingsStartDate}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                <span className="text-muted-foreground">to</span>
+                
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-[140px] justify-start text-left font-normal",
+                        !savingsEndDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {savingsEndDate ? format(savingsEndDate, "dd/MM/yyyy") : "To Date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={savingsEndDate}
+                      onSelect={setSavingsEndDate}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                {(savingsStartDate || savingsEndDate) && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setSavingsStartDate(undefined);
+                      setSavingsEndDate(undefined);
+                    }}
+                    className="h-9 w-9"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              
+              {/* Date Range Total Display */}
+              {(savingsStartDate || savingsEndDate) && dateRangeSavingsTotal !== undefined && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-card border rounded-lg">
+                  <span className="text-sm text-muted-foreground">
+                    {savingsStartDate && savingsEndDate 
+                      ? `${format(savingsStartDate, 'dd/MM/yyyy')} - ${format(savingsEndDate, 'dd/MM/yyyy')}`
+                      : savingsStartDate 
+                        ? `From ${format(savingsStartDate, 'dd/MM/yyyy')}`
+                        : `To ${format(savingsEndDate!, 'dd/MM/yyyy')}`
+                    }:
+                  </span>
+                  <span className="text-sm font-semibold text-savings-blue">
+                    {formatCurrency(dateRangeSavingsTotal)}
+                  </span>
+                </div>
+              )}
+            </div>
+            <EditableDataTable 
+              type="savings" 
+              selectedMonth={selectedMonth} 
+              selectedYear={selectedYear}
+              startDate={savingsStartDate}
+              endDate={savingsEndDate}
+            />
           </div>
         );
         case 'reports':
