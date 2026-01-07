@@ -193,6 +193,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_cleanup_login_history: { Args: never; Returns: number }
+      cleanup_old_login_history: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
