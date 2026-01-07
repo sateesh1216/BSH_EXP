@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,19 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAdminApi } from '@/hooks/useAdminApi';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, formatDistanceToNow } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { 
   History, 
   Search, 
@@ -18,7 +31,9 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
-  Calendar
+  Calendar,
+  Trash2,
+  RefreshCw
 } from 'lucide-react';
 
 interface LoginRecord {
@@ -39,10 +54,66 @@ const LoginHistory = () => {
   const { getLoginHistory } = useAdminApi();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [cleanupRan, setCleanupRan] = useState(false);
+  const queryClient = useQueryClient();
 
-  const { data, isLoading, error } = useQuery({
+  // Auto cleanup on component mount
+  useEffect(() => {
+    const runAutoCleanup = async () => {
+      if (cleanupRan) return;
+      try {
+        const { data, error } = await supabase.rpc('auto_cleanup_login_history');
+        if (!error && data && data > 0) {
+          toast.info(`Auto-cleaned ${data} old login record(s)`);
+          queryClient.invalidateQueries({ queryKey: ['admin-login-history'] });
+        }
+        setCleanupRan(true);
+      } catch (e) {
+        console.error('Auto cleanup failed:', e);
+      }
+    };
+    runAutoCleanup();
+  }, [cleanupRan, queryClient]);
+
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-login-history'],
     queryFn: () => getLoginHistory(undefined, 500),
+  });
+
+  // Manual delete mutation
+  const deleteRecordMutation = useMutation({
+    mutationFn: async (recordId: string) => {
+      const { error } = await supabase
+        .from('login_history')
+        .delete()
+        .eq('id', recordId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Login record deleted');
+      queryClient.invalidateQueries({ queryKey: ['admin-login-history'] });
+    },
+    onError: (error) => {
+      toast.error('Failed to delete record: ' + error.message);
+    },
+  });
+
+  // Delete all records mutation
+  const deleteAllMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('login_history')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('All login history deleted');
+      queryClient.invalidateQueries({ queryKey: ['admin-login-history'] });
+    },
+    onError: (error) => {
+      toast.error('Failed to delete all records: ' + error.message);
+    },
   });
 
   const history: LoginRecord[] = data?.history || [];
@@ -98,20 +169,56 @@ const LoginHistory = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg">
             <History className="h-6 w-6 text-primary" />
           </div>
           <div>
             <h2 className="text-2xl font-bold">Login History</h2>
-            <p className="text-muted-foreground">Track and monitor user login activity</p>
+            <p className="text-muted-foreground text-sm">Records auto-delete after 24 hours</p>
           </div>
         </div>
-        <Badge variant="secondary" className="px-3 py-1.5">
-          <Calendar className="h-3.5 w-3.5 mr-1.5" />
-          {filteredHistory.length} records
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            className="gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm" className="gap-2" disabled={history.length === 0}>
+                <Trash2 className="h-4 w-4" />
+                Clear All
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete All Login History?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete all {history.length} login records. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => deleteAllMutation.mutate()}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Delete All
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <Badge variant="secondary" className="px-3 py-1.5">
+            <Calendar className="h-3.5 w-3.5 mr-1.5" />
+            {filteredHistory.length} records
+          </Badge>
+        </div>
       </div>
 
       {/* Search Bar */}
@@ -227,6 +334,36 @@ const LoginHistory = () => {
                         {formatDistanceToNow(loginTime, { addSuffix: true })}
                       </p>
                     </div>
+
+                    {/* Delete Button */}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this login record?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete this login record for {record.profiles?.full_name || record.profiles?.email}.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteRecordMutation.mutate(record.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 );
               })}
