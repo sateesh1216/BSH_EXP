@@ -10,6 +10,7 @@ import UserManagement from '@/components/Admin/UserManagement';
 import LoginHistory from '@/components/Admin/LoginHistory';
 import AdminReports from '@/components/Admin/AdminReports';
 import AdminSettings from '@/components/Admin/AdminSettings';
+import AccessRequests from '@/components/Admin/AccessRequests';
 
 const Admin = () => {
   const { user, signOut, isAdmin, loading } = useAuth();
@@ -35,6 +36,8 @@ const Admin = () => {
     switch (activeSection) {
       case 'dashboard':
         return <AdminDashboard />;
+      case 'access-requests':
+        return <AccessRequests />;
       case 'users':
         return <UserManagement />;
       case 'login-history':
@@ -79,7 +82,7 @@ const Admin = () => {
                 <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-lg sm:text-2xl font-bold text-gradient">BSH EXPENSES</h1>
+                <h1 className="text-lg sm:text-2xl font-bold text-gradient">BSH Accounts</h1>
                 <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1">
                   <Shield className="h-3 w-3" />
                   Admin Panel

@@ -244,7 +244,7 @@ const AdminDashboard = () => {
           <CardContent className="p-4 sm:p-6 pt-0 space-y-2 text-xs sm:text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Application</span>
-              <span className="font-medium">BSH EXPENSES</span>
+              <span className="font-medium">BSH Accounts</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Version</span>

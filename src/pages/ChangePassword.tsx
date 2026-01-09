@@ -117,7 +117,7 @@ const ChangePassword = () => {
             <div className="p-3 bg-gradient-primary rounded-2xl shadow-glow">
               <TrendingUp className="h-8 w-8 text-primary-foreground" />
             </div>
-            <h1 className="text-4xl font-bold text-gradient">BSH EXPENSES</h1>
+            <h1 className="text-4xl font-bold text-gradient">BSH Accounts</h1>
           </div>
         </div>
 

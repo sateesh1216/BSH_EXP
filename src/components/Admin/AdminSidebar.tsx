@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { LayoutDashboard, Users, History, BarChart3, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, History, BarChart3, Settings, UserPlus } from 'lucide-react';
 
 interface AdminSidebarProps {
   activeSection: string;
@@ -10,6 +10,7 @@ interface AdminSidebarProps {
 const AdminSidebar = ({ activeSection, setActiveSection }: AdminSidebarProps) => {
   const sections = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'access-requests', label: 'Access Requests', icon: UserPlus },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'login-history', label: 'Login History', icon: History },
     { id: 'reports', label: 'Reports', icon: BarChart3 },
