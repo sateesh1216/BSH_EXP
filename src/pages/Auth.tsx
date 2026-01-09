@@ -7,17 +7,20 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Navigate } from 'react-router-dom';
-import { TrendingUp, Mail, Lock, ArrowRight, Shield, AlertTriangle } from 'lucide-react';
+import { TrendingUp, Mail, Lock, ArrowRight, Shield, AlertTriangle, Phone, User, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput, validateTextInput } from '@/lib/security';
 
 const Auth = () => {
-  const { user, signIn, signUp, failedAttempts, isBlocked } = useAuth();
+  const { user, signIn, failedAttempts, isBlocked } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [requestSubmitted, setRequestSubmitted] = useState(false);
   const { toast } = useToast();
 
   if (user) {
@@ -59,12 +62,15 @@ const Auth = () => {
     setLoading(false);
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleRequestAccess = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
     // Client-side validation
     const sanitizedEmail = sanitizeInput(email);
+    const sanitizedPhone = sanitizeInput(phone);
+    const sanitizedName = sanitizeInput(fullName);
+    
     const emailValidation = validateTextInput(sanitizedEmail, 'Email', 1, 254);
     if (!emailValidation.isValid) {
       toast({
@@ -75,19 +81,46 @@ const Auth = () => {
       setLoading(false);
       return;
     }
-    
-    const { error } = await signUp(sanitizedEmail, password);
-    
-    if (error) {
+
+    const phoneValidation = validateTextInput(sanitizedPhone, 'Phone number', 10, 15);
+    if (!phoneValidation.isValid) {
       toast({
-        title: 'Error signing up',
-        description: error.message,
+        title: 'Invalid phone number',
+        description: phoneValidation.error,
         variant: 'destructive',
       });
+      setLoading(false);
+      return;
+    }
+    
+    // Submit access request
+    const { error } = await supabase
+      .from('access_requests')
+      .insert({
+        email: sanitizedEmail,
+        phone_number: sanitizedPhone,
+        full_name: sanitizedName || null,
+      });
+    
+    if (error) {
+      if (error.code === '23505') {
+        toast({
+          title: 'Request already exists',
+          description: 'An access request with this email already exists. Please wait for admin approval.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error submitting request',
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
     } else {
+      setRequestSubmitted(true);
       toast({
-        title: 'Account created!',
-        description: 'Please check your email to verify your account.',
+        title: 'Request submitted!',
+        description: 'Your access request has been submitted. An admin will review and contact you with login credentials.',
       });
     }
     
@@ -145,7 +178,7 @@ const Auth = () => {
             <div className="p-3 bg-gradient-primary rounded-2xl shadow-glow animate-pulse-glow">
               <TrendingUp className="h-8 w-8 text-primary-foreground" />
             </div>
-            <h1 className="text-4xl font-bold text-gradient">BSH EXPENSES</h1>
+            <h1 className="text-4xl font-bold text-gradient">BSH Accounts</h1>
           </div>
           <p className="text-muted-foreground text-lg">Manage your income, expenses, and savings efficiently</p>
         </div>
@@ -154,12 +187,14 @@ const Auth = () => {
         <Card className="bg-gradient-card border-border/50 shadow-xl backdrop-blur-sm animate-slide-up">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-2xl font-semibold">
-              {showForgotPassword ? 'Reset Password' : 'Welcome Back'}
+              {showForgotPassword ? 'Reset Password' : requestSubmitted ? 'Request Submitted' : 'Welcome'}
             </CardTitle>
             <CardDescription className="text-base">
               {showForgotPassword 
                 ? 'Enter your email to receive a password reset link' 
-                : 'Sign in to your account or create a new one'
+                : requestSubmitted
+                ? 'Your access request is pending admin approval'
+                : 'Sign in to your account or request access'
               }
             </CardDescription>
           </CardHeader>
@@ -181,103 +216,58 @@ const Auth = () => {
               </div>
             )}
             
-            <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-lg flex items-start gap-3">
-              <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h4 className="font-medium text-primary mb-1">Security Features Active</h4>
-                <p className="text-sm text-primary/80">
-                  • Input validation and sanitization<br />
-                  • Rate limiting protection<br />
-                  • Secure authentication with Supabase<br />
-                  • Row-level security policies
+            {requestSubmitted ? (
+              /* Request Submitted Success */
+              <div className="text-center py-8">
+                <div className="mx-auto w-16 h-16 bg-success/20 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle className="h-8 w-8 text-success" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Request Received!</h3>
+                <p className="text-muted-foreground mb-6">
+                  Your access request has been submitted successfully. An administrator will review your request and generate login credentials for you.
                 </p>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setRequestSubmitted(false);
+                    setEmail('');
+                    setPhone('');
+                    setFullName('');
+                  }}
+                >
+                  Submit Another Request
+                </Button>
               </div>
-            </div>
-            
-            {showForgotPassword ? (
-              /* Forgot Password Form */
-              <form onSubmit={handleForgotPassword} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="reset-email" className="text-sm font-medium">Email Address</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="reset-email"
-                      type="email"
-                      placeholder="Enter your email address"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 input-professional"
-                      required
-                    />
+            ) : (
+              <>
+                <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-lg flex items-start gap-3">
+                  <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="font-medium text-primary mb-1">Secure Access</h4>
+                    <p className="text-sm text-primary/80">
+                      • Admin-controlled user registration<br />
+                      • Secure password generation<br />
+                      • Row-level security policies
+                    </p>
                   </div>
                 </div>
                 
-                <div className="space-y-3">
-                  <Button 
-                    type="submit" 
-                    className="w-full btn-professional" 
-                    disabled={resetLoading}
-                  >
-                    {resetLoading ? 'Sending...' : 'Send Reset Link'}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                  
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="w-full"
-                    onClick={() => setShowForgotPassword(false)}
-                  >
-                    Back to Sign In
-                  </Button>
-                </div>
-              </form>
-            ) : (
-              /* Sign In/Sign Up Forms */
-              <Tabs defaultValue="signin" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-2 bg-muted/50">
-                  <TabsTrigger value="signin" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                    Sign In
-                  </TabsTrigger>
-                  <TabsTrigger value="signup" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                    Sign Up
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="signin" className="space-y-4">
-                  <form onSubmit={handleSignIn} className="space-y-6">
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="signin-email" className="text-sm font-medium">Email Address</Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="signin-email"
-                            type="email"
-                            placeholder="Enter your email address"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="pl-10 input-professional"
-                            required
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="signin-password" className="text-sm font-medium">Password</Label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="signin-password"
-                            type="password"
-                            placeholder="Enter your password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="pl-10 input-professional"
-                            required
-                          />
-                        </div>
+                {showForgotPassword ? (
+                  /* Forgot Password Form */
+                  <form onSubmit={handleForgotPassword} className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="reset-email" className="text-sm font-medium">Email Address</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="reset-email"
+                          type="email"
+                          placeholder="Enter your email address"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="pl-10 input-professional"
+                          required
+                        />
                       </div>
                     </div>
                     
@@ -285,74 +275,159 @@ const Auth = () => {
                       <Button 
                         type="submit" 
                         className="w-full btn-professional" 
-                        disabled={loading}
+                        disabled={resetLoading}
                       >
-                        {loading ? 'Signing in...' : 'Sign In'}
+                        {resetLoading ? 'Sending...' : 'Send Reset Link'}
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                       
                       <Button
                         type="button"
                         variant="ghost"
-                        className="w-full text-sm hover:text-primary"
-                        onClick={() => setShowForgotPassword(true)}
+                        className="w-full"
+                        onClick={() => setShowForgotPassword(false)}
                       >
-                        Forgot your password?
+                        Back to Sign In
                       </Button>
                     </div>
                   </form>
-                </TabsContent>
-                
-                <TabsContent value="signup" className="space-y-4">
-                  <form onSubmit={handleSignUp} className="space-y-6">
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-email" className="text-sm font-medium">Email Address</Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="signup-email"
-                            type="email"
-                            placeholder="Enter your email address"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="pl-10 input-professional"
-                            required
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="signup-password" className="text-sm font-medium">Password</Label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="signup-password"
-                            type="password"
-                            placeholder="Create a strong password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="pl-10 input-professional"
-                            required
-                          />
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Password must be at least 8 characters long
-                        </p>
-                      </div>
-                    </div>
+                ) : (
+                  /* Sign In/Request Access Forms */
+                  <Tabs defaultValue="signin" className="space-y-4">
+                    <TabsList className="grid w-full grid-cols-2 bg-muted/50">
+                      <TabsTrigger value="signin" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                        Sign In
+                      </TabsTrigger>
+                      <TabsTrigger value="request" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                        Request Access
+                      </TabsTrigger>
+                    </TabsList>
                     
-                    <Button 
-                      type="submit" 
-                      className="w-full btn-professional" 
-                      disabled={loading}
-                    >
-                      {loading ? 'Creating account...' : 'Create Account'}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </form>
-                </TabsContent>
-              </Tabs>
+                    <TabsContent value="signin" className="space-y-4">
+                      <form onSubmit={handleSignIn} className="space-y-6">
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="signin-email" className="text-sm font-medium">Email Address</Label>
+                            <div className="relative">
+                              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                id="signin-email"
+                                type="email"
+                                placeholder="Enter your email address"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="pl-10 input-professional"
+                                required
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="signin-password" className="text-sm font-medium">Password</Label>
+                            <div className="relative">
+                              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                id="signin-password"
+                                type="password"
+                                placeholder="Enter your password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="pl-10 input-professional"
+                                required
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <Button 
+                            type="submit" 
+                            className="w-full btn-professional" 
+                            disabled={loading}
+                          >
+                            {loading ? 'Signing in...' : 'Sign In'}
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                          
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="w-full text-sm hover:text-primary"
+                            onClick={() => setShowForgotPassword(true)}
+                          >
+                            Forgot your password?
+                          </Button>
+                        </div>
+                      </form>
+                    </TabsContent>
+                    
+                    <TabsContent value="request" className="space-y-4">
+                      <form onSubmit={handleRequestAccess} className="space-y-6">
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="request-name" className="text-sm font-medium">Full Name (Optional)</Label>
+                            <div className="relative">
+                              <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                id="request-name"
+                                type="text"
+                                placeholder="Enter your full name"
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
+                                className="pl-10 input-professional"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="request-email" className="text-sm font-medium">Email Address</Label>
+                            <div className="relative">
+                              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                id="request-email"
+                                type="email"
+                                placeholder="Enter your email address"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="pl-10 input-professional"
+                                required
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="request-phone" className="text-sm font-medium">Phone Number</Label>
+                            <div className="relative">
+                              <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                id="request-phone"
+                                type="tel"
+                                placeholder="Enter your phone number"
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value)}
+                                className="pl-10 input-professional"
+                                required
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              We'll use this to contact you with your login credentials
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <Button 
+                          type="submit" 
+                          className="w-full btn-professional" 
+                          disabled={loading}
+                        >
+                          {loading ? 'Submitting...' : 'Request Access'}
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </form>
+                    </TabsContent>
+                  </Tabs>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
