@@ -62,6 +62,19 @@ const MonthlyDataTables = () => {
     }).format(amount);
   };
 
+  const formatPaymentMode = (mode: string) => {
+    const modeMap: Record<string, string> = {
+      'debit_card': 'Debit Card',
+      'credit_card': 'Credit Card',
+      'upi': 'UPI',
+      'cash': 'Cash',
+      'auto_debit': 'Auto Debit',
+      'online_banking': 'Online Banking',
+      'card': 'Debit Card', // Legacy value mapping
+    };
+    return modeMap[mode] || mode;
+  };
+
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), 'MMM dd, yyyy');
   };
@@ -132,7 +145,7 @@ const MonthlyDataTables = () => {
                     <TableCell>{formatDate(expense.date)}</TableCell>
                     <TableCell>
                       <span className="capitalize bg-secondary px-2 py-1 rounded text-xs">
-                        {expense.payment_mode}
+                        {formatPaymentMode(expense.payment_mode)}
                       </span>
                     </TableCell>
                     <TableCell className="text-right text-expense-red font-semibold">

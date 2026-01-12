@@ -195,6 +195,19 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
     }).format(amount);
   };
 
+  const formatPaymentMode = (mode: string) => {
+    const modeMap: Record<string, string> = {
+      'debit_card': 'Debit Card',
+      'credit_card': 'Credit Card',
+      'upi': 'UPI',
+      'cash': 'Cash',
+      'auto_debit': 'Auto Debit',
+      'online_banking': 'Online Banking',
+      'card': 'Debit Card', // Legacy value mapping
+    };
+    return modeMap[mode] || mode;
+  };
+
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), 'MMM dd, yyyy');
   };
@@ -484,14 +497,17 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="card">Card</SelectItem>
+                              <SelectItem value="debit_card">Debit Card</SelectItem>
+                              <SelectItem value="credit_card">Credit Card</SelectItem>
                               <SelectItem value="upi">UPI</SelectItem>
                               <SelectItem value="cash">Cash</SelectItem>
+                              <SelectItem value="auto_debit">Auto Debit</SelectItem>
+                              <SelectItem value="online_banking">Online Banking</SelectItem>
                             </SelectContent>
                           </Select>
                         ) : (
                           <span className="capitalize bg-secondary px-2 py-1 rounded text-xs">
-                            {(item as any).payment_mode}
+                            {formatPaymentMode((item as any).payment_mode)}
                           </span>
                         )}
                       </TableCell>
