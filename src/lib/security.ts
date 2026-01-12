@@ -37,7 +37,7 @@ export const validateAmount = (amount: string): { isValid: boolean; error?: stri
   return { isValid: true };
 };
 
-export const validateDate = (date: string): { isValid: boolean; error?: string } => {
+export const validateDate = (date: string, allowFuture: boolean = true): { isValid: boolean; error?: string } => {
   if (!date) {
     return { isValid: false, error: 'Date is required' };
   }
@@ -46,9 +46,15 @@ export const validateDate = (date: string): { isValid: boolean; error?: string }
   const today = new Date();
   const hundredYearsAgo = new Date();
   hundredYearsAgo.setFullYear(today.getFullYear() - 100);
+  const fiveYearsFromNow = new Date();
+  fiveYearsFromNow.setFullYear(today.getFullYear() + 5);
   
-  if (selectedDate > today) {
+  if (!allowFuture && selectedDate > today) {
     return { isValid: false, error: 'Date cannot be in the future' };
+  }
+  
+  if (allowFuture && selectedDate > fiveYearsFromNow) {
+    return { isValid: false, error: 'Date cannot be more than 5 years in the future' };
   }
   
   if (selectedDate < hundredYearsAgo) {
