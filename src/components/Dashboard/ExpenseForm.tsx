@@ -159,7 +159,7 @@ const ExpenseForm = () => {
     }
 
     // Validate payment mode against allowed values
-    const allowedPaymentModes = ['card', 'upi', 'cash'];
+    const allowedPaymentModes = ['debit_card', 'credit_card', 'upi', 'cash', 'auto_debit', 'online_banking'];
     if (!allowedPaymentModes.includes(paymentMode)) {
       toast({
         title: "Error",
@@ -268,9 +268,12 @@ const ExpenseForm = () => {
                   <SelectValue placeholder="Select payment mode" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="debit_card">Debit Card</SelectItem>
+                  <SelectItem value="credit_card">Credit Card</SelectItem>
                   <SelectItem value="upi">UPI</SelectItem>
                   <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="auto_debit">Auto Debit</SelectItem>
+                  <SelectItem value="online_banking">Online Banking</SelectItem>
                 </SelectContent>
               </Select>
             </div>
