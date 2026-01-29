@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, PiggyBank, BarChart3, Calendar, Download, Upload, Shield, Key, Trash2, Sparkles } from 'lucide-react';
+import { TrendingUp, TrendingDown, PiggyBank, BarChart3, Calendar, Download, Upload, Shield, Key, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
@@ -42,16 +42,17 @@ const Sidebar = ({
   }, [user]);
 
   const sections = [
-    { id: 'income', label: 'Income', icon: TrendingUp, color: 'text-success', bgColor: 'bg-success/10' },
-    { id: 'expenses', label: 'Expenses', icon: TrendingDown, color: 'text-expense-red', bgColor: 'bg-expense-red/10' },
-    { id: 'savings', label: 'Savings', icon: PiggyBank, color: 'text-expense-blue', bgColor: 'bg-expense-blue/10' },
-    { id: 'reports', label: 'Reports', icon: BarChart3, color: 'text-primary', bgColor: 'bg-primary/10' },
-    { id: 'download', label: 'Download', icon: Download, color: 'text-muted-foreground', bgColor: 'bg-muted' },
-    { id: 'upload', label: 'Upload', icon: Upload, color: 'text-muted-foreground', bgColor: 'bg-muted' },
-    { id: 'delete', label: 'Delete Data', icon: Trash2, color: 'text-destructive', bgColor: 'bg-destructive/10' },
+    { id: 'income', label: 'Income', icon: TrendingUp, color: 'text-expense-green' },
+    { id: 'expenses', label: 'Expenses', icon: TrendingDown, color: 'text-expense-red' },
+    { id: 'savings', label: 'Savings', icon: PiggyBank, color: 'text-expense-blue' },
+    { id: 'reports', label: 'Reports', icon: BarChart3, color: 'text-primary' },
+    { id: 'download', label: 'Download Data', icon: Download, color: 'text-primary' },
+    { id: 'upload', label: 'Upload Data', icon: Upload, color: 'text-primary' },
+    { id: 'delete', label: 'Delete Data', icon: Trash2, color: 'text-destructive' },
   ];
 
   const currentYear = new Date().getFullYear();
+  // Include years from 2 years in future to 5 years in past to handle all data scenarios
   const years = Array.from({ length: 8 }, (_, i) => currentYear + 2 - i);
   const months = [
     { value: '01', label: 'January' },
@@ -69,125 +70,108 @@ const Sidebar = ({
   ];
 
   return (
-    <div className="w-72 bg-card/80 backdrop-blur-sm rounded-2xl border border-border/40 h-fit max-h-[calc(100vh-120px)] p-4 space-y-4 overflow-y-auto shadow-sm">
+    <div className="w-80 bg-card border-r border-border h-full lg:h-[calc(100vh-73px)] p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
       {/* Filter Section */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 px-1">
-          <div className="p-1.5 rounded-lg bg-primary/10">
-            <Calendar className="h-4 w-4 text-primary" />
-          </div>
-          <span className="font-semibold text-sm">Time Period</span>
+      <Card className="p-3 sm:p-4">
+        <div className="flex items-center gap-2 mb-3 sm:mb-4">
+          <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+          <h3 className="font-semibold text-sm sm:text-base">Filter Data</h3>
         </div>
         
-        <div className="grid grid-cols-2 gap-2">
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="h-9 rounded-xl border-border/40 bg-background/50 text-sm">
-              <SelectValue placeholder="Year" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Years</SelectItem>
-              {years.map((year) => (
-                <SelectItem key={year} value={year.toString()}>
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="space-y-3 sm:space-y-4">
+          <div>
+            <label className="text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 block">Year</label>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="h-9 sm:h-10">
+                <SelectValue placeholder="Select year" />
+              </SelectTrigger>
+               <SelectContent>
+                <SelectItem value="all">All Years</SelectItem>
+                {years.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="h-9 rounded-xl border-border/40 bg-background/50 text-sm">
-              <SelectValue placeholder="Month" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              {months.map((month) => (
-                <SelectItem key={month.value} value={month.value}>
-                  {month.label.slice(0, 3)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div>
+            <label className="text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 block">Month</label>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="h-9 sm:h-10">
+                <SelectValue placeholder="Select month" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Months</SelectItem>
+                {months.map((month) => (
+                  <SelectItem key={month.value} value={month.value}>
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-      </div>
-
-      {/* Divider */}
-      <div className="border-t border-border/40" />
+      </Card>
 
       {/* Navigation Section */}
-      <div className="space-y-1.5">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1">Navigation</span>
-        <div className="space-y-1">
+      <Card className="p-3 sm:p-4">
+        <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Sections</h3>
+        <div className="space-y-1 sm:space-y-2">
           {sections.map((section) => {
             const Icon = section.icon;
-            const isActive = activeSection === section.id;
             return (
               <Button
                 key={section.id}
-                variant="ghost"
-                className={`w-full justify-start gap-3 h-10 rounded-xl transition-all duration-200 ${
-                  isActive 
-                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25 hover:bg-primary/90' 
-                    : 'hover:bg-muted/80'
-                }`}
+                variant={activeSection === section.id ? "default" : "ghost"}
+                className="w-full justify-start gap-2 sm:gap-3 h-10 sm:h-12"
                 onClick={() => setActiveSection(section.id)}
               >
-                <div className={`p-1 rounded-lg ${isActive ? 'bg-white/20' : section.bgColor}`}>
-                  <Icon className={`h-4 w-4 ${isActive ? 'text-primary-foreground' : section.color}`} />
-                </div>
-                <span className="font-medium text-sm">{section.label}</span>
+                <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${section.color}`} />
+                <span className="font-medium text-sm sm:text-base">{section.label}</span>
               </Button>
             );
           })}
         </div>
-      </div>
+      </Card>
 
-      {/* Admin Panel */}
+      {/* Admin Panel - Only visible for admins */}
       {isAdmin && (
-        <>
-          <div className="border-t border-border/40" />
-          <div className="space-y-1.5">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1">Administration</span>
-            <Link to="/admin">
-              <Button variant="ghost" className="w-full justify-start gap-3 h-10 rounded-xl hover:bg-primary/10">
-                <div className="p-1 rounded-lg bg-primary/10">
-                  <Shield className="h-4 w-4 text-primary" />
-                </div>
-                <span className="font-medium text-sm">Admin Panel</span>
-                <Sparkles className="h-3 w-3 ml-auto text-primary" />
-              </Button>
-            </Link>
-          </div>
-        </>
+        <Card className="p-3 sm:p-4">
+          <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Administration</h3>
+          <Link to="/admin">
+            <Button variant="default" className="w-full justify-start gap-2 sm:gap-3 h-10 sm:h-12">
+              <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="font-medium text-sm sm:text-base">Admin Panel</span>
+            </Button>
+          </Link>
+        </Card>
       )}
 
-      {/* Account Section */}
-      <div className="border-t border-border/40" />
-      <div className="space-y-2">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1">Account</span>
-        <Link to="/change-password">
-          <Button variant="ghost" className="w-full justify-start gap-3 h-10 rounded-xl hover:bg-muted/80">
-            <div className="p-1 rounded-lg bg-muted">
-              <Key className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <span className="font-medium text-sm">Change Password</span>
-          </Button>
-        </Link>
-        
-        {/* User Info Card */}
-        <div className="mt-3 p-3 rounded-xl bg-muted/50 border border-border/40">
-          <p className="text-xs text-muted-foreground truncate mb-1.5">{user?.email || 'Not signed in'}</p>
-          <div className="flex items-center gap-2">
-            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
-              dbRole === 'admin' 
-                ? 'bg-success/10 text-success' 
-                : 'bg-muted text-muted-foreground'
-            }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${dbRole === 'admin' ? 'bg-success' : 'bg-muted-foreground'}`} />
-              {dbRole === 'admin' ? 'Admin' : 'User'}
-            </span>
-          </div>
+      {/* Profile Section */}
+      <Card className="p-3 sm:p-4">
+        <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Account</h3>
+        <div className="space-y-1 sm:space-y-2">
+          <Link to="/change-password">
+            <Button variant="ghost" className="w-full justify-start gap-2 sm:gap-3 h-10 sm:h-12">
+              <Key className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+              <span className="font-medium text-sm sm:text-base">Change Password</span>
+            </Button>
+          </Link>
         </div>
-      </div>
+        {/* Admin Status Debug */}
+        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border text-[10px] sm:text-xs text-muted-foreground space-y-0.5 sm:space-y-1">
+          <p className="truncate">Email: {user?.email || 'Not signed in'}</p>
+          <p>DB Role: <span className={dbRole === 'admin' ? 'text-expense-green font-medium' : 'text-expense-red font-medium'}>{dbRole || 'checking...'}</span></p>
+          <p>
+            Admin status:{" "}
+            <span className={isAdmin ? 'text-expense-green font-medium' : 'text-expense-red font-medium'}>
+              {isAdmin ? 'Yes' : 'No'}
+            </span>
+          </p>
+        </div>
+      </Card>
     </div>
   );
 };

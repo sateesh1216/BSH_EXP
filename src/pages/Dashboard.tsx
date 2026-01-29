@@ -163,8 +163,6 @@ const Dashboard = () => {
     enabled: !!user?.id && (!!savingsStartDate || !!savingsEndDate),
   });
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -519,103 +517,89 @@ const Dashboard = () => {
     }
   };
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-surface-elevated to-muted/30">
-      {/* Modern Floating Header */}
-      <header className="sticky top-0 z-50 px-4 pt-4">
-        <div className="glass-effect rounded-2xl border border-border/40 shadow-lg backdrop-blur-xl">
-          <div className="px-4 sm:px-6">
-            <div className="flex justify-between items-center py-3 sm:py-4">
-              <div className="flex items-center gap-3 sm:gap-4">
-                {/* Mobile Menu Button */}
-                <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-                  <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="lg:hidden shrink-0 rounded-xl hover:bg-primary/10">
-                      <Menu className="h-5 w-5" />
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="p-0 w-80 border-r-0">
-                    <Sidebar
-                      activeSection={activeSection}
-                      setActiveSection={(section) => {
-                        setActiveSection(section);
-                        setSidebarOpen(false);
-                      }}
-                      selectedMonth={selectedMonth}
-                      setSelectedMonth={setSelectedMonth}
-                      selectedYear={selectedYear}
-                      setSelectedYear={setSelectedYear}
-                    />
-                  </SheetContent>
-                </Sheet>
-                
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-gradient-to-br from-primary to-primary/80 rounded-xl shadow-lg shadow-primary/25">
-                    <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                  </div>
-                  <div>
-                    <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">BSH Accounts</h1>
-                    <p className="text-xs text-muted-foreground hidden sm:block">Financial Management Dashboard</p>
-                  </div>
-                </div>
-              </div>
+    <div className="min-h-screen bg-transparent">
+      {/* Professional Header */}
+      <header className="glass-effect border-b border-border/50 sticky top-0 z-50 backdrop-blur-md">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-3 sm:py-4">
+            <div className="flex items-center gap-2 sm:gap-3 animate-fade-in">
+              {/* Mobile Menu Button */}
+              <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="lg:hidden shrink-0">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-80">
+                  <Sidebar
+                    activeSection={activeSection}
+                    setActiveSection={(section) => {
+                      setActiveSection(section);
+                      setSidebarOpen(false);
+                    }}
+                    selectedMonth={selectedMonth}
+                    setSelectedMonth={setSelectedMonth}
+                    selectedYear={selectedYear}
+                    setSelectedYear={setSelectedYear}
+                  />
+                </SheetContent>
+              </Sheet>
               
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-muted/50 text-sm text-muted-foreground">
-                  <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                  <span>Welcome back!</span>
-                </div>
-                <Button 
-                  variant="outline" 
-                  onClick={signOut} 
-                  size="sm"
-                  className="hover-lift rounded-xl border-border/40 bg-card/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/40 transition-all duration-300"
-                >
-                  <LogOut className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Logout</span>
-                </Button>
+              <div className="p-1.5 sm:p-2 bg-gradient-primary rounded-lg sm:rounded-xl shadow-glow">
+                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
+              <div>
+                <h1 className="text-lg sm:text-2xl font-bold text-gradient">BSH Accounts</h1>
+                <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Financial Management System</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-4 animate-fade-in [animation-delay:0.2s]">
+              <span className="text-sm text-muted-foreground hidden md:block">
+                Welcome back! Track your finances professionally.
+              </span>
+              <Button 
+                variant="outline" 
+                onClick={signOut} 
+                size="sm"
+                className="hover-lift border-border/40 bg-card/50"
+              >
+                <LogOut className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Layout */}
-      <div className="flex pt-4">
+      <div className="flex">
         {/* Sidebar - Hidden on mobile */}
-        <div className="hidden lg:block pl-4 pb-4">
-          <div className="sticky top-24">
-            <Sidebar
-              activeSection={activeSection}
-              setActiveSection={setActiveSection}
-              selectedMonth={selectedMonth}
-              setSelectedMonth={setSelectedMonth}
-              selectedYear={selectedYear}
-              setSelectedYear={setSelectedYear}
-            />
-          </div>
+        <div className="hidden lg:block">
+          <Sidebar
+            activeSection={activeSection}
+            setActiveSection={setActiveSection}
+            selectedMonth={selectedMonth}
+            setSelectedMonth={setSelectedMonth}
+            selectedYear={selectedYear}
+            setSelectedYear={setSelectedYear}
+          />
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto min-h-[calc(100vh-100px)]">
-          <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
-            {/* Summary Cards Section */}
-            <section className="animate-fade-in">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">Financial Overview</h2>
-                  <p className="text-sm text-muted-foreground">Your monthly summary at a glance</p>
-                </div>
-              </div>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-8">
+            {/* Summary Cards */}
+            <div className="animate-slide-up">
               <MonthlySummaryCards selectedMonth={selectedMonth} selectedYear={selectedYear} />
-            </section>
+            </div>
 
-            {/* Dynamic Content Section */}
-            <section className="animate-fade-in [animation-delay:0.15s]">
-              <div className="rounded-2xl bg-card/50 backdrop-blur-sm border border-border/40 p-4 sm:p-6 shadow-sm">
-                {renderContent()}
-              </div>
-            </section>
+            {/* Dynamic Content */}
+            <div className="animate-slide-up [animation-delay:0.3s]">
+              {renderContent()}
+            </div>
           </div>
         </main>
       </div>
