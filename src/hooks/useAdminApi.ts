@@ -46,6 +46,9 @@ export const useAdminApi = () => {
   const getUserFinancialData = (user_id: string) =>
     callAdminFunction("get_user_financial_data", { user_id });
 
+  const getReportsData = (year?: string) =>
+    callAdminFunction("get_reports_data", { year });
+
   return {
     getStats,
     getUsers,
@@ -55,5 +58,6 @@ export const useAdminApi = () => {
     deleteUser,
     getLoginHistory,
     getUserFinancialData,
+    getReportsData,
   };
 };
