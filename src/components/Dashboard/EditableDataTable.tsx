@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
-import { Edit, Trash2, Save, X, FileText, Download } from 'lucide-react';
+import { Edit, Trash2, Save, X, FileText, Download, XCircle } from 'lucide-react';
 
 interface EditableDataTableProps {
   type: 'income' | 'expenses' | 'savings';
@@ -187,6 +187,66 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
       });
     },
   });
+
+  const deleteAttachmentMutation = useMutation({
+    mutationFn: async ({ id, attachmentType }: { id: string; attachmentType: 'bill' | 'warranty' }) => {
+      const urlField = attachmentType === 'bill' ? 'attachment_url' : 'warranty_url';
+      
+      // Get the current record to find the file path
+      const { data: record, error: fetchError } = await supabase
+        .from('expenses')
+        .select(urlField)
+        .eq('id', id)
+        .eq('user_id', user?.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const fileUrl = record?.[urlField];
+      if (fileUrl) {
+        // Extract file path from URL
+        const urlParts = fileUrl.split('/expense-attachments/');
+        if (urlParts.length > 1) {
+          const filePath = urlParts[1];
+          // Delete from storage
+          const { error: storageError } = await supabase.storage
+            .from('expense-attachments')
+            .remove([filePath]);
+          
+          if (storageError) console.warn('Storage deletion warning:', storageError);
+        }
+      }
+
+      // Update the record to remove the URL
+      const { error } = await supabase
+        .from('expenses')
+        .update({ [urlField]: null })
+        .eq('id', id)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, { attachmentType }) => {
+      toast({
+        title: "Success",
+        description: `${attachmentType === 'bill' ? 'Bill' : 'Warranty'} attachment deleted successfully!`,
+      });
+      queryClient.invalidateQueries({ queryKey: [type] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete attachment",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteAttachment = (id: string, attachmentType: 'bill' | 'warranty') => {
+    if (confirm(`Are you sure you want to delete this ${attachmentType === 'bill' ? 'bill' : 'warranty'} attachment?`)) {
+      deleteAttachmentMutation.mutate({ id, attachmentType });
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -451,26 +511,46 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
                             <span className="font-medium block">{(item as any).expense_details}</span>
                             <div className="flex flex-wrap gap-2">
                               {(item as any).attachment_url && (
-                                <a 
-                                  href={(item as any).attachment_url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition-colors"
-                                >
-                                  <FileText className="h-3.5 w-3.5" />
-                                  View Bill
-                                </a>
+                                <div className="inline-flex items-center gap-1 bg-primary/10 rounded-md">
+                                  <a 
+                                    href={(item as any).attachment_url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 rounded-l-md transition-colors"
+                                  >
+                                    <FileText className="h-3.5 w-3.5" />
+                                    View Bill
+                                  </a>
+                                  <button
+                                    onClick={() => handleDeleteAttachment(item.id, 'bill')}
+                                    className="inline-flex items-center px-2 py-1.5 text-xs text-destructive hover:bg-destructive/10 rounded-r-md transition-colors"
+                                    title="Delete Bill"
+                                    disabled={deleteAttachmentMutation.isPending}
+                                  >
+                                    <XCircle className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
                               )}
                               {(item as any).warranty_url && (
-                                <a 
-                                  href={(item as any).warranty_url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"
-                                >
-                                  <FileText className="h-3.5 w-3.5" />
-                                  View Warranty
-                                </a>
+                                <div className="inline-flex items-center gap-1 bg-secondary rounded-md">
+                                  <a 
+                                    href={(item as any).warranty_url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:bg-secondary/80 rounded-l-md transition-colors"
+                                  >
+                                    <FileText className="h-3.5 w-3.5" />
+                                    View Warranty
+                                  </a>
+                                  <button
+                                    onClick={() => handleDeleteAttachment(item.id, 'warranty')}
+                                    className="inline-flex items-center px-2 py-1.5 text-xs text-destructive hover:bg-destructive/10 rounded-r-md transition-colors"
+                                    title="Delete Warranty"
+                                    disabled={deleteAttachmentMutation.isPending}
+                                  >
+                                    <XCircle className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
                               )}
                             </div>
                           </div>
