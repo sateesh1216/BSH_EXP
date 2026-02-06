@@ -323,6 +323,117 @@ serve(async (req) => {
         });
       }
 
+      case "get_reports_data": {
+        const { year } = params;
+        
+        // Get all users with their profiles
+        const { data: profiles } = await adminClient
+          .from("profiles")
+          .select("user_id, email, full_name");
+        
+        // Get all income, expenses, savings
+        const [incomeRes, expensesRes, savingsRes] = await Promise.all([
+          adminClient.from("income").select("*"),
+          adminClient.from("expenses").select("*"),
+          adminClient.from("savings").select("*"),
+        ]);
+
+        const income = incomeRes.data || [];
+        const expenses = expensesRes.data || [];
+        const savings = savingsRes.data || [];
+
+        // Filter by year if provided
+        const filterByYear = (items: any[], dateField = 'date') => {
+          if (!year) return items;
+          return items.filter(item => new Date(item[dateField]).getFullYear() === parseInt(year));
+        };
+
+        const filteredIncome = filterByYear(income);
+        const filteredExpenses = filterByYear(expenses);
+        const filteredSavings = filterByYear(savings);
+
+        // Calculate totals
+        const totalIncome = filteredIncome.reduce((sum, item) => sum + Number(item.amount), 0);
+        const totalExpenses = filteredExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
+        const totalSavings = filteredSavings.reduce((sum, item) => sum + Number(item.amount), 0);
+        const netAmount = totalIncome - totalExpenses - totalSavings;
+
+        // Monthly breakdown
+        const monthlyData: Record<string, { income: number; expenses: number; savings: number }> = {};
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        
+        months.forEach(month => {
+          monthlyData[month] = { income: 0, expenses: 0, savings: 0 };
+        });
+
+        filteredIncome.forEach(item => {
+          const month = months[new Date(item.date).getMonth()];
+          monthlyData[month].income += Number(item.amount);
+        });
+
+        filteredExpenses.forEach(item => {
+          const month = months[new Date(item.date).getMonth()];
+          monthlyData[month].expenses += Number(item.amount);
+        });
+
+        filteredSavings.forEach(item => {
+          const month = months[new Date(item.date).getMonth()];
+          monthlyData[month].savings += Number(item.amount);
+        });
+
+        // User-wise breakdown
+        const userBreakdown = (profiles || []).map(profile => {
+          const userIncome = filteredIncome
+            .filter(i => i.user_id === profile.user_id)
+            .reduce((sum, item) => sum + Number(item.amount), 0);
+          const userExpenses = filteredExpenses
+            .filter(e => e.user_id === profile.user_id)
+            .reduce((sum, item) => sum + Number(item.amount), 0);
+          const userSavings = filteredSavings
+            .filter(s => s.user_id === profile.user_id)
+            .reduce((sum, item) => sum + Number(item.amount), 0);
+
+          return {
+            user_id: profile.user_id,
+            name: profile.full_name || profile.email,
+            email: profile.email,
+            income: userIncome,
+            expenses: userExpenses,
+            savings: userSavings,
+            net: userIncome - userExpenses - userSavings,
+          };
+        }).filter(u => u.income > 0 || u.expenses > 0 || u.savings > 0);
+
+        // Get available years
+        const allDates = [
+          ...income.map(i => new Date(i.date).getFullYear()),
+          ...expenses.map(e => new Date(e.date).getFullYear()),
+          ...savings.map(s => new Date(s.date).getFullYear()),
+        ];
+        const availableYears = [...new Set(allDates)].sort((a, b) => b - a);
+
+        return new Response(JSON.stringify({
+          totalIncome,
+          totalExpenses,
+          totalSavings,
+          netAmount,
+          monthlyData: months.map(month => ({
+            month,
+            ...monthlyData[month],
+          })),
+          userBreakdown,
+          availableYears,
+          rawData: {
+            income: filteredIncome,
+            expenses: filteredExpenses,
+            savings: filteredSavings,
+          },
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       default:
         return new Response(JSON.stringify({ error: "Invalid action" }), {
           status: 400,
