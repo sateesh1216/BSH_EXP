@@ -434,6 +434,98 @@ serve(async (req) => {
         });
       }
 
+      case "get_system_info": {
+        // Get counts for all tables
+        const [
+          profilesCount,
+          incomeCount,
+          expensesCount,
+          savingsCount,
+          loginHistoryCount,
+          accessRequestsCount,
+          adminCount,
+        ] = await Promise.all([
+          adminClient.from("profiles").select("*", { count: "exact", head: true }),
+          adminClient.from("income").select("*", { count: "exact", head: true }),
+          adminClient.from("expenses").select("*", { count: "exact", head: true }),
+          adminClient.from("savings").select("*", { count: "exact", head: true }),
+          adminClient.from("login_history").select("*", { count: "exact", head: true }),
+          adminClient.from("access_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+          adminClient.from("user_roles").select("*", { count: "exact", head: true }).eq("role", "admin"),
+        ]);
+
+        // Get active users count
+        const { count: activeUsers } = await adminClient
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .eq("is_active", true);
+
+        // Get inactive users count
+        const { count: inactiveUsers } = await adminClient
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .eq("is_active", false);
+
+        // Get oldest and newest login
+        const { data: oldestLogin } = await adminClient
+          .from("login_history")
+          .select("login_at")
+          .order("login_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        const { data: newestLogin } = await adminClient
+          .from("login_history")
+          .select("login_at")
+          .order("login_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        return new Response(JSON.stringify({
+          totalUsers: profilesCount.count || 0,
+          activeUsers: activeUsers || 0,
+          inactiveUsers: inactiveUsers || 0,
+          adminUsers: adminCount.count || 0,
+          totalIncomeRecords: incomeCount.count || 0,
+          totalExpenseRecords: expensesCount.count || 0,
+          totalSavingsRecords: savingsCount.count || 0,
+          totalLoginRecords: loginHistoryCount.count || 0,
+          pendingAccessRequests: accessRequestsCount.count || 0,
+          oldestLoginDate: oldestLogin?.login_at || null,
+          newestLoginDate: newestLogin?.login_at || null,
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      case "cleanup_login_history": {
+        const { days_to_keep = 90 } = params;
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - days_to_keep);
+
+        const { data: deleted, error: deleteError } = await adminClient
+          .from("login_history")
+          .delete()
+          .lt("login_at", cutoffDate.toISOString())
+          .select("id");
+
+        if (deleteError) {
+          return new Response(JSON.stringify({ error: deleteError.message }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          deletedCount: deleted?.length || 0,
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       default:
         return new Response(JSON.stringify({ error: "Invalid action" }), {
           status: 400,
