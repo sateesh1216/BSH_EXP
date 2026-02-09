@@ -49,6 +49,11 @@ export const useAdminApi = () => {
   const getReportsData = (year?: string) =>
     callAdminFunction("get_reports_data", { year });
 
+  const getSystemInfo = () => callAdminFunction("get_system_info");
+
+  const cleanupLoginHistory = (days_to_keep: number = 90) =>
+    callAdminFunction("cleanup_login_history", { days_to_keep });
+
   return {
     getStats,
     getUsers,
@@ -59,5 +64,7 @@ export const useAdminApi = () => {
     getLoginHistory,
     getUserFinancialData,
     getReportsData,
+    getSystemInfo,
+    cleanupLoginHistory,
   };
 };
