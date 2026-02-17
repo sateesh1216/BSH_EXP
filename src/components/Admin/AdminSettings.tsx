@@ -3,6 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog,
@@ -30,16 +33,34 @@ import {
   Activity,
   Info,
   AlertTriangle,
+  Mail,
+  Bell,
+  Moon,
+  Sun,
+  Monitor,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAdminApi } from '@/hooks/useAdminApi';
 import { useToast } from '@/hooks/use-toast';
+import { useTheme } from 'next-themes';
 
 const AdminSettings = () => {
   const { getSystemInfo, cleanupLoginHistory } = useAdminApi();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [cleanupDays, setCleanupDays] = useState('90');
+
+  const { theme, setTheme } = useTheme();
+
+  // Email notification settings (local state - UI preferences)
+  const [emailNotifications, setEmailNotifications] = useState({
+    newUserSignup: true,
+    accessRequest: true,
+    loginAlert: false,
+    dailySummary: false,
+    weeklyReport: true,
+    adminEmail: '',
+  });
 
   const { data: systemInfo, isLoading, refetch } = useQuery({
     queryKey: ['admin-system-info'],
@@ -344,6 +365,118 @@ const AdminSettings = () => {
                     </AlertDialog>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Appearance & Email Notifications Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Dark Mode / Appearance */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Moon className="h-5 w-5 text-primary" />
+                  Appearance
+                </CardTitle>
+                <CardDescription>Choose your preferred theme</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    onClick={() => setTheme('light')}
+                    className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                      theme === 'light'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/40'
+                    }`}
+                  >
+                    <Sun className="h-6 w-6 text-warning" />
+                    <span className="text-sm font-medium">Light</span>
+                  </button>
+                  <button
+                    onClick={() => setTheme('dark')}
+                    className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                      theme === 'dark'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/40'
+                    }`}
+                  >
+                    <Moon className="h-6 w-6 text-primary" />
+                    <span className="text-sm font-medium">Dark</span>
+                  </button>
+                  <button
+                    onClick={() => setTheme('system')}
+                    className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                      theme === 'system'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/40'
+                    }`}
+                  >
+                    <Monitor className="h-6 w-6 text-muted-foreground" />
+                    <span className="text-sm font-medium">System</span>
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Current theme: <Badge variant="secondary" className="ml-1 capitalize">{theme}</Badge>
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Email Notification Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Mail className="h-5 w-5 text-primary" />
+                  Email Notifications
+                </CardTitle>
+                <CardDescription>Configure system alert preferences</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1">
+                  <Label htmlFor="admin-email" className="text-sm">Admin Email</Label>
+                  <Input
+                    id="admin-email"
+                    type="email"
+                    placeholder="admin@example.com"
+                    value={emailNotifications.adminEmail}
+                    onChange={(e) =>
+                      setEmailNotifications((prev) => ({ ...prev, adminEmail: e.target.value }))
+                    }
+                  />
+                </div>
+                <Separator />
+                <div className="space-y-3">
+                  {[
+                    { key: 'newUserSignup' as const, label: 'New User Signup', desc: 'When a new user registers' },
+                    { key: 'accessRequest' as const, label: 'Access Request', desc: 'When someone requests access' },
+                    { key: 'loginAlert' as const, label: 'Login Alerts', desc: 'Unusual login activity detected' },
+                    { key: 'dailySummary' as const, label: 'Daily Summary', desc: 'Daily financial activity digest' },
+                    { key: 'weeklyReport' as const, label: 'Weekly Report', desc: 'Weekly analytics overview' },
+                  ].map((item) => (
+                    <div key={item.key} className="flex items-center justify-between py-1">
+                      <div className="space-y-0.5">
+                        <Label className="text-sm font-medium">{item.label}</Label>
+                        <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      </div>
+                      <Switch
+                        checked={emailNotifications[item.key]}
+                        onCheckedChange={(checked) =>
+                          setEmailNotifications((prev) => ({ ...prev, [item.key]: checked }))
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  size="sm"
+                  className="w-full"
+                  onClick={() =>
+                    toast({ title: 'Saved', description: 'Notification preferences updated.' })
+                  }
+                >
+                  <Bell className="h-4 w-4 mr-2" />
+                  Save Preferences
+                </Button>
               </CardContent>
             </Card>
           </div>
