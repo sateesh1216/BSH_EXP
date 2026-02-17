@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import ChangePassword from "./pages/ChangePassword";
+import ProfileSettings from "./pages/ProfileSettings";
 
 const queryClient = new QueryClient();
 
@@ -25,7 +26,8 @@ const App = () => (
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/admin" element={<Admin />} />
-                <Route path="/change-password" element={<ChangePassword />} />
+              <Route path="/change-password" element={<ChangePassword />} />
+              <Route path="/profile" element={<ProfileSettings />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<Auth />} />
               </Routes>

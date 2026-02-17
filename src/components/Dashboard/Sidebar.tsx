@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, PiggyBank, BarChart3, Calendar, Download, Upload, Shield, Key, Trash2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, PiggyBank, BarChart3, Calendar, Download, Upload, Shield, Key, Trash2, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
@@ -153,6 +153,12 @@ const Sidebar = ({
       <Card className="p-3 sm:p-4">
         <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Account</h3>
         <div className="space-y-1 sm:space-y-2">
+          <Link to="/profile">
+            <Button variant="ghost" className="w-full justify-start gap-2 sm:gap-3 h-10 sm:h-12">
+              <User className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+              <span className="font-medium text-sm sm:text-base">Profile Settings</span>
+            </Button>
+          </Link>
           <Link to="/change-password">
             <Button variant="ghost" className="w-full justify-start gap-2 sm:gap-3 h-10 sm:h-12">
               <Key className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
