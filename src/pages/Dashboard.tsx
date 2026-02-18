@@ -21,6 +21,7 @@ import Reports from '@/components/Dashboard/Reports';
 import DownloadData from '@/components/Dashboard/DownloadData';
 import DataUpload from '@/components/Dashboard/DataUpload';
 import DeleteData from '@/components/Dashboard/DeleteData';
+import QuickAddExpense from '@/components/Dashboard/QuickAddExpense';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -603,6 +604,9 @@ const Dashboard = () => {
           </div>
         </main>
       </div>
+
+      {/* Floating Quick Add Expense Button */}
+      <QuickAddExpense />
     </div>
   );
 };
