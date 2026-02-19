@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -42,9 +43,14 @@ const ExpenseForm = () => {
   const [billFile, setBillFile] = useState<File | null>(null);
   const [warrantyFile, setWarrantyFile] = useState<File | null>(null);
   const [bulkRows, setBulkRows] = useState<BulkRow[]>([emptyRow(), emptyRow(), emptyRow()]);
+  const [showEmiAlert, setShowEmiAlert] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setShowEmiAlert(expenseDetails.toLowerCase().includes('emi'));
+  }, [expenseDetails]);
 
   const addExpenseMutation = useMutation({
     mutationFn: async (expenseData: { 
@@ -422,6 +428,16 @@ const ExpenseForm = () => {
                 </div>
               </div>
               
+              {showEmiAlert && (
+                <Alert variant="destructive" className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950 text-yellow-800 dark:text-yellow-200">
+                  <AlertTriangle className="h-4 w-4 !text-yellow-600" />
+                  <AlertTitle>EMI Reminder</AlertTitle>
+                  <AlertDescription>
+                    Please verify the EMI due date before submitting. Ensure the date matches your EMI payment schedule.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <Button 
                 type="submit" 
                 className="w-full" 

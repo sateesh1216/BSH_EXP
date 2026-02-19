@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,9 +16,14 @@ const SavingsForm = () => {
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [amount, setAmount] = useState('');
   const [details, setDetails] = useState('');
+  const [showSipAlert, setShowSipAlert] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setShowSipAlert(details.toLowerCase().includes('sip'));
+  }, [details]);
 
   const addSavingsMutation = useMutation({
     mutationFn: async (savingsData: { date: string; amount: number; details: string }) => {
@@ -156,6 +163,16 @@ const SavingsForm = () => {
             </div>
           </div>
           
+          {showSipAlert && (
+            <Alert variant="destructive" className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950 text-yellow-800 dark:text-yellow-200">
+              <AlertTriangle className="h-4 w-4 !text-yellow-600" />
+              <AlertTitle>SIP Reminder</AlertTitle>
+              <AlertDescription>
+                Please verify the SIP due date before submitting. Ensure the date matches your SIP schedule.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Button 
             type="submit" 
             className="w-full" 
