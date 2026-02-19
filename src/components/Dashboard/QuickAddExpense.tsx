@@ -24,7 +24,7 @@ const QuickAddExpense = () => {
   const [open, setOpen] = useState(false);
   const [expenseDetails, setExpenseDetails] = useState('');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [paymentMode, setPaymentMode] = useState('');
+  const [paymentMode, setPaymentMode] = useState('upi');
   const [amount, setAmount] = useState('');
   const { user } = useAuth();
   const { toast } = useToast();
