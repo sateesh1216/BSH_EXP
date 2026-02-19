@@ -37,7 +37,7 @@ const emptyRow = (): BulkRow => ({ expense_details: '', date: format(new Date(),
 const ExpenseForm = () => {
   const [expenseDetails, setExpenseDetails] = useState('');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [paymentMode, setPaymentMode] = useState('');
+  const [paymentMode, setPaymentMode] = useState('upi');
   const [amount, setAmount] = useState('');
   const [billFile, setBillFile] = useState<File | null>(null);
   const [warrantyFile, setWarrantyFile] = useState<File | null>(null);
