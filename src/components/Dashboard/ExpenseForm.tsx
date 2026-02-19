@@ -32,7 +32,7 @@ const PAYMENT_MODES = [
 ];
 
 type BulkRow = { expense_details: string; date: string; payment_mode: string; amount: string };
-const emptyRow = (): BulkRow => ({ expense_details: '', date: format(new Date(), 'yyyy-MM-dd'), payment_mode: '', amount: '' });
+const emptyRow = (): BulkRow => ({ expense_details: '', date: format(new Date(), 'yyyy-MM-dd'), payment_mode: 'upi', amount: '' });
 
 const ExpenseForm = () => {
   const [expenseDetails, setExpenseDetails] = useState('');
