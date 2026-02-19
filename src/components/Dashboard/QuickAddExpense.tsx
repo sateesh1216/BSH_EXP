@@ -14,9 +14,10 @@ import { format } from 'date-fns';
 import { sanitizeInput, validateAmount, validateDate, validateTextInput, checkRateLimit, rateLimitKey } from '@/lib/security';
 
 const PRESET_CATEGORIES = [
-  'Groceries', 'Rent', 'Fuel', 'Electricity', 'Water Bill',
-  'Internet', 'Mobile Recharge', 'Food & Dining', 'Transport',
-  'Medical', 'Shopping', 'Entertainment', 'Education', 'Insurance',
+  'Bike Petrol', 'Panipuri', 'Electricity/Power Bill', 'Chicken', 'Curd',
+  'Home - 20 Lit Water Bottle', 'Fish', 'Movie Tickets', 'Gas', 'Milk',
+  'D Mart', 'Groceries', 'Home - Rythu Bazar', 'Bus Tickets', 'Blinkit',
+  'JioMart', 'Haircut', 'Rapido', 'Flipkart', 'Amazon', 'Myntra', 'AJio',
 ];
 
 const QuickAddExpense = () => {
