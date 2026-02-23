@@ -8,11 +8,13 @@ import { Button } from '@/components/ui/button';
 import ManageReminders from './ManageReminders';
 
 interface Reminder {
-  type: 'EMI' | 'SIP';
+  type: string;
   detail: string;
   dayOfMonth: number;
   daysUntil: number;
   source: 'auto' | 'manual';
+  startDate?: string;
+  endDate?: string;
 }
 
 const UpcomingReminders = () => {
@@ -71,28 +73,36 @@ const UpcomingReminders = () => {
   const getUpcomingReminders = (): Reminder[] => {
     const reminders: Reminder[] = [];
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
 
     const calcDaysUntil = (day: number) => {
       const dueDate = new Date(currentYear, currentMonth, day);
+      dueDate.setHours(0, 0, 0, 0);
       if (dueDate < today) dueDate.setMonth(dueDate.getMonth() + 1);
       return Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     };
 
-    // Manual reminders (priority)
+    // Manual reminders (priority) — check date range
     const manualKeys = new Set<string>();
     manualReminders?.forEach((r) => {
+      // Check if today is within the date range (if set)
+      if (r.start_date && new Date(r.start_date) > today) return;
+      if (r.end_date && new Date(r.end_date) < today) return;
+
       const diffDays = calcDaysUntil(r.day_of_month);
       const key = `${r.type}-${r.label}-${r.day_of_month}`;
       manualKeys.add(key);
       if (diffDays >= 0 && diffDays <= 3) {
         reminders.push({
-          type: r.type as 'EMI' | 'SIP',
+          type: r.type,
           detail: r.label,
           dayOfMonth: r.day_of_month,
           daysUntil: diffDays,
           source: 'manual',
+          startDate: r.start_date || undefined,
+          endDate: r.end_date || undefined,
         });
       }
     });
@@ -134,9 +144,16 @@ const UpcomingReminders = () => {
 
   return (
     <div className="space-y-2">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium flex items-center gap-1.5">
+          <Bell className="h-4 w-4" />
+          Payment Reminders
+        </h3>
         <ManageReminders />
       </div>
+      {reminders.length === 0 && (
+        <p className="text-xs text-muted-foreground">No upcoming reminders in the next 3 days.</p>
+      )}
       {reminders.map((reminder) => {
         const key = `${reminder.type}-${reminder.detail}-${reminder.dayOfMonth}`;
         const dayLabel =
@@ -160,6 +177,9 @@ const UpcomingReminders = () => {
               Your <strong>{reminder.type}</strong> for "
               <strong>{reminder.detail}</strong>" is due{' '}
               {dayLabel.toLowerCase()}. Please ensure sufficient balance.
+              {reminder.endDate && (
+                <span className="text-xs ml-1">(Till {new Date(reminder.endDate).toLocaleDateString()})</span>
+              )}
             </AlertDescription>
             <Button
               variant="ghost"

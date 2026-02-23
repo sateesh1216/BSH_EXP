@@ -10,14 +10,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Settings, Plus, Trash2, Bell } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 const ManageReminders = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState('');
-  const [type, setType] = useState<'EMI' | 'SIP'>('EMI');
+  const [type, setType] = useState<string>('EMI');
   const [dayOfMonth, setDayOfMonth] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const { data: reminders, isLoading } = useQuery({
     queryKey: ['recurring-reminders', user?.id],
@@ -35,7 +38,7 @@ const ManageReminders = () => {
   });
 
   const addMutation = useMutation({
-    mutationFn: async (reminder: { label: string; type: string; day_of_month: number }) => {
+    mutationFn: async (reminder: { label: string; type: string; day_of_month: number; start_date?: string; end_date?: string }) => {
       const { error } = await supabase
         .from('recurring_reminders')
         .insert([{ ...reminder, user_id: user?.id }]);
@@ -47,6 +50,8 @@ const ManageReminders = () => {
       toast.success('Reminder added successfully');
       setLabel('');
       setDayOfMonth('');
+      setStartDate('');
+      setEndDate('');
       setOpen(false);
     },
     onError: () => toast.error('Failed to add reminder'),
@@ -74,7 +79,17 @@ const ManageReminders = () => {
       toast.error('Please enter a valid label and day (1-31)');
       return;
     }
-    addMutation.mutate({ label: label.trim(), type, day_of_month: day });
+    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+      toast.error('Start date must be before end date');
+      return;
+    }
+    addMutation.mutate({
+      label: label.trim(),
+      type,
+      day_of_month: day,
+      start_date: startDate || undefined,
+      end_date: endDate || undefined,
+    });
   };
 
   return (
@@ -85,7 +100,7 @@ const ManageReminders = () => {
           Manage Reminders
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
@@ -101,9 +116,9 @@ const ManageReminders = () => {
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
-                <Label>Label</Label>
+                <Label>Label (Expense/Savings name)</Label>
                 <Input
-                  placeholder="e.g. Home Loan EMI, Mutual Fund SIP"
+                  placeholder="e.g. Home Loan EMI, SBI Gold SIP, Rent"
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                 />
@@ -111,13 +126,15 @@ const ManageReminders = () => {
               <div className="flex gap-3">
                 <div className="flex-1">
                   <Label>Type</Label>
-                  <Select value={type} onValueChange={(v) => setType(v as 'EMI' | 'SIP')}>
+                  <Select value={type} onValueChange={(v) => setType(v)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="EMI">EMI (Expense)</SelectItem>
                       <SelectItem value="SIP">SIP (Savings)</SelectItem>
+                      <SelectItem value="Expense">Other Expense</SelectItem>
+                      <SelectItem value="Savings">Other Savings</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -133,6 +150,27 @@ const ManageReminders = () => {
                   />
                 </div>
               </div>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <Label>From Date (optional)</Label>
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label>Till Date (optional)</Label>
+                  <Input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Leave dates empty for permanent reminders. Set dates to get reminders only within that period.
+              </p>
               <Button onClick={handleAdd} disabled={addMutation.isPending} className="w-full gap-1.5">
                 <Plus className="h-4 w-4" />
                 Add Reminder
@@ -150,19 +188,28 @@ const ManageReminders = () => {
             ) : (
               reminders.map((r) => (
                 <div key={r.id} className="flex items-center justify-between p-3 border rounded-lg bg-card">
-                  <div>
-                    <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary mr-2">
-                      {r.type}
-                    </span>
-                    <span className="text-sm font-medium">{r.label}</span>
-                    <span className="text-xs text-muted-foreground ml-2">
-                      — {r.day_of_month}th of every month
-                    </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                        {r.type}
+                      </span>
+                      <span className="text-sm font-medium truncate">{r.label}</span>
+                      <span className="text-xs text-muted-foreground">
+                        — {r.day_of_month}th of every month
+                      </span>
+                    </div>
+                    {(r.start_date || r.end_date) && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {r.start_date ? format(new Date(r.start_date), 'dd MMM yyyy') : 'Start'}
+                        {' → '}
+                        {r.end_date ? format(new Date(r.end_date), 'dd MMM yyyy') : 'Ongoing'}
+                      </p>
+                    )}
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    className="h-8 w-8 text-destructive hover:text-destructive shrink-0"
                     onClick={() => deleteMutation.mutate(r.id)}
                     disabled={deleteMutation.isPending}
                   >
