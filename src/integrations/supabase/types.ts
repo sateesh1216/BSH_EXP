@@ -182,6 +182,36 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_reminders: {
+        Row: {
+          created_at: string
+          day_of_month: number
+          id: string
+          is_active: boolean
+          label: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_month: number
+          id?: string
+          is_active?: boolean
+          label: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_month?: number
+          id?: string
+          is_active?: boolean
+          label?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       savings: {
         Row: {
           amount: number

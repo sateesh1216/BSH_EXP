@@ -5,19 +5,36 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Bell, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import ManageReminders from './ManageReminders';
 
 interface Reminder {
   type: 'EMI' | 'SIP';
   detail: string;
   dayOfMonth: number;
   daysUntil: number;
+  source: 'auto' | 'manual';
 }
 
 const UpcomingReminders = () => {
   const { user } = useAuth();
   const [dismissed, setDismissed] = useState<string[]>([]);
 
-  // Find most recent EMI expenses to detect recurring day-of-month
+  // Manual reminders from DB
+  const { data: manualReminders } = useQuery({
+    queryKey: ['manual-reminders', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('recurring_reminders')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('is_active', true);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Auto-detect EMI from expenses
   const { data: emiReminders } = useQuery({
     queryKey: ['emi-reminders', user?.id],
     queryFn: async () => {
@@ -28,14 +45,13 @@ const UpcomingReminders = () => {
         .ilike('expense_details', '%emi%')
         .order('date', { ascending: false })
         .limit(50);
-
       if (error) throw error;
       return data || [];
     },
     enabled: !!user?.id,
   });
 
-  // Find most recent SIP savings to detect recurring day-of-month
+  // Auto-detect SIP from savings
   const { data: sipReminders } = useQuery({
     queryKey: ['sip-reminders', user?.id],
     queryFn: async () => {
@@ -46,7 +62,6 @@ const UpcomingReminders = () => {
         .ilike('details', '%sip%')
         .order('date', { ascending: false })
         .limit(50);
-
       if (error) throw error;
       return data || [];
     },
@@ -56,56 +71,58 @@ const UpcomingReminders = () => {
   const getUpcomingReminders = (): Reminder[] => {
     const reminders: Reminder[] = [];
     const today = new Date();
-    const currentDay = today.getDate();
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
 
-    // Extract unique EMI entries by detail+day
+    const calcDaysUntil = (day: number) => {
+      const dueDate = new Date(currentYear, currentMonth, day);
+      if (dueDate < today) dueDate.setMonth(dueDate.getMonth() + 1);
+      return Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    };
+
+    // Manual reminders (priority)
+    const manualKeys = new Set<string>();
+    manualReminders?.forEach((r) => {
+      const diffDays = calcDaysUntil(r.day_of_month);
+      const key = `${r.type}-${r.label}-${r.day_of_month}`;
+      manualKeys.add(key);
+      if (diffDays >= 0 && diffDays <= 3) {
+        reminders.push({
+          type: r.type as 'EMI' | 'SIP',
+          detail: r.label,
+          dayOfMonth: r.day_of_month,
+          daysUntil: diffDays,
+          source: 'manual',
+        });
+      }
+    });
+
+    // Auto-detected EMI (skip if manual exists for same)
     const emiMap = new Map<string, number>();
     emiReminders?.forEach((e) => {
       const day = new Date(e.date).getDate();
-      const key = `${e.expense_details.toLowerCase().trim()}-${day}`;
-      if (!emiMap.has(key)) {
-        emiMap.set(key, day);
-        // Check if this day is within next 3 days
-        const dueDate = new Date(currentYear, currentMonth, day);
-        // If due date already passed this month, check next month
-        if (dueDate < today) {
-          dueDate.setMonth(dueDate.getMonth() + 1);
-        }
-        const diffTime = dueDate.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const mapKey = `${e.expense_details.toLowerCase().trim()}-${day}`;
+      const manualCheck = `EMI-${e.expense_details}-${day}`;
+      if (!emiMap.has(mapKey) && !manualKeys.has(manualCheck)) {
+        emiMap.set(mapKey, day);
+        const diffDays = calcDaysUntil(day);
         if (diffDays >= 0 && diffDays <= 3) {
-          reminders.push({
-            type: 'EMI',
-            detail: e.expense_details,
-            dayOfMonth: day,
-            daysUntil: diffDays,
-          });
+          reminders.push({ type: 'EMI', detail: e.expense_details, dayOfMonth: day, daysUntil: diffDays, source: 'auto' });
         }
       }
     });
 
-    // Extract unique SIP entries by detail+day
+    // Auto-detected SIP
     const sipMap = new Map<string, number>();
     sipReminders?.forEach((s) => {
       const day = new Date(s.date).getDate();
-      const key = `${s.details.toLowerCase().trim()}-${day}`;
-      if (!sipMap.has(key)) {
-        sipMap.set(key, day);
-        const dueDate = new Date(currentYear, currentMonth, day);
-        if (dueDate < today) {
-          dueDate.setMonth(dueDate.getMonth() + 1);
-        }
-        const diffTime = dueDate.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const mapKey = `${s.details.toLowerCase().trim()}-${day}`;
+      const manualCheck = `SIP-${s.details}-${day}`;
+      if (!sipMap.has(mapKey) && !manualKeys.has(manualCheck)) {
+        sipMap.set(mapKey, day);
+        const diffDays = calcDaysUntil(day);
         if (diffDays >= 0 && diffDays <= 3) {
-          reminders.push({
-            type: 'SIP',
-            detail: s.details,
-            dayOfMonth: day,
-            daysUntil: diffDays,
-          });
+          reminders.push({ type: 'SIP', detail: s.details, dayOfMonth: day, daysUntil: diffDays, source: 'auto' });
         }
       }
     });
@@ -115,10 +132,11 @@ const UpcomingReminders = () => {
 
   const reminders = getUpcomingReminders();
 
-  if (reminders.length === 0) return null;
-
   return (
     <div className="space-y-2">
+      <div className="flex justify-end">
+        <ManageReminders />
+      </div>
       {reminders.map((reminder) => {
         const key = `${reminder.type}-${reminder.detail}-${reminder.dayOfMonth}`;
         const dayLabel =
