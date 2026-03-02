@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { Edit, Trash2, Save, X, FileText, Download, XCircle, Bell } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 interface EditableDataTableProps {
   type: 'income' | 'expenses' | 'savings';
@@ -30,6 +31,23 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
   const [editData, setEditData] = useState<any>({});
   const [billFile, setBillFile] = useState<File | null>(null);
   const [warrantyFile, setWarrantyFile] = useState<File | null>(null);
+  const [reminderConfirmItem, setReminderConfirmItem] = useState<any>(null);
+  const [showRemindersPanel, setShowRemindersPanel] = useState(false);
+
+  // Fetch existing reminders for this user
+  const { data: existingReminders } = useQuery({
+    queryKey: ['recurring-reminders', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('recurring_reminders')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('day_of_month', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
 
   // Calculate date range based on filters
   const getDateRange = () => {
@@ -731,7 +749,7 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => addReminderMutation.mutate(item)}
+                                  onClick={() => setReminderConfirmItem(item)}
                                   disabled={addReminderMutation.isPending}
                                 >
                                   <Bell className="h-4 w-4" />
@@ -758,6 +776,83 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
           </TableBody>
         </Table>
       </CardContent>
+
+      {/* Show All Reminders Toggle */}
+      {(type === 'expenses' || type === 'savings') && (
+        <CardContent className="pt-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full gap-1.5 text-muted-foreground"
+            onClick={() => setShowRemindersPanel(!showRemindersPanel)}
+          >
+            <Bell className="h-4 w-4" />
+            {showRemindersPanel ? 'Hide Reminders' : `Show All Reminders (${existingReminders?.length || 0})`}
+          </Button>
+          {showRemindersPanel && (
+            <div className="mt-3 space-y-2 max-h-60 overflow-y-auto">
+              {!existingReminders?.length ? (
+                <p className="text-sm text-muted-foreground text-center py-3">No reminders set yet.</p>
+              ) : (
+                existingReminders.map((r) => (
+                  <div key={r.id} className={`flex items-center justify-between p-2 border rounded-lg text-sm ${!r.is_active ? 'opacity-50' : ''}`}>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary shrink-0">{r.type}</span>
+                      <span className="truncate">{r.label}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">Day {r.day_of_month}</span>
+                    </div>
+                    {!r.is_active && <span className="text-xs italic text-muted-foreground shrink-0">Paused</span>}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </CardContent>
+      )}
+
+      {/* Confirmation Dialog */}
+      <Dialog open={!!reminderConfirmItem} onOpenChange={(open) => !open && setReminderConfirmItem(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5" /> Add Recurring Reminder
+            </DialogTitle>
+            <DialogDescription>
+              This will create a recurring reminder for:
+            </DialogDescription>
+          </DialogHeader>
+          {reminderConfirmItem && (
+            <div className="space-y-2 py-2">
+              <div className="p-3 border rounded-lg bg-muted/50 space-y-1">
+                <p className="font-medium">
+                  {type === 'expenses' ? reminderConfirmItem.expense_details : reminderConfirmItem.details}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Day <strong>{new Date(reminderConfirmItem.date).getDate()}</strong> of every month
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Type: <strong>{type === 'expenses' 
+                    ? (reminderConfirmItem.expense_details?.toLowerCase().includes('emi') ? 'EMI' : 'Bill')
+                    : (reminderConfirmItem.details?.toLowerCase().includes('sip') ? 'SIP' : 'Investment')}</strong>
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setReminderConfirmItem(null)}>Cancel</Button>
+            <Button
+              onClick={() => {
+                addReminderMutation.mutate(reminderConfirmItem);
+                setReminderConfirmItem(null);
+              }}
+              disabled={addReminderMutation.isPending}
+              className="gap-1.5"
+            >
+              <Bell className="h-4 w-4" /> Confirm Reminder
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
