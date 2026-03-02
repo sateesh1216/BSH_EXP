@@ -18,6 +18,7 @@ const PRESET_CATEGORIES = [
   'Home - 20 Lit Water Bottle', 'Fish', 'Movie Tickets', 'Gas', 'Milk',
   'D Mart', 'Groceries', 'Home - Rythu Bazar', 'Bus Tickets', 'Blinkit',
   'JioMart', 'Haircut', 'Rapido', 'Flipkart', 'Amazon', 'Myntra', 'AJio',
+  'House Rent', 'Travel', 'Parties', 'Donations',
 ];
 
 const QuickAddExpense = () => {
