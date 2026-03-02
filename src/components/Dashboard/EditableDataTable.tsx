@@ -10,7 +10,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
-import { Edit, Trash2, Save, X, FileText, Download, XCircle } from 'lucide-react';
+import { Edit, Trash2, Save, X, FileText, Download, XCircle, Bell } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface EditableDataTableProps {
   type: 'income' | 'expenses' | 'savings';
@@ -247,6 +248,42 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
       deleteAttachmentMutation.mutate({ id, attachmentType });
     }
   };
+
+  const addReminderMutation = useMutation({
+    mutationFn: async (item: any) => {
+      const label = type === 'expenses' ? item.expense_details : item.details;
+      const dayOfMonth = new Date(item.date).getDate();
+      const reminderType = type === 'expenses' 
+        ? (label?.toLowerCase().includes('emi') ? 'EMI' : 'bill')
+        : (label?.toLowerCase().includes('sip') ? 'SIP' : 'investment');
+
+      const { error } = await supabase
+        .from('recurring_reminders')
+        .insert([{
+          user_id: user?.id,
+          label,
+          type: reminderType,
+          day_of_month: dayOfMonth,
+          is_active: true,
+        }]);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Reminder Added",
+        description: "Recurring reminder created successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ['recurring-reminders'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add reminder",
+        variant: "destructive",
+      });
+    },
+  });
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -687,6 +724,25 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
+                        {(type === 'expenses' || type === 'savings') && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => addReminderMutation.mutate(item)}
+                                  disabled={addReminderMutation.isPending}
+                                >
+                                  <Bell className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Add as recurring reminder</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </div>
                     )}
                   </TableCell>
