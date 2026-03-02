@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LogOut, TrendingUp, Search, CalendarIcon, X, Menu } from 'lucide-react';
+import { LogOut, TrendingUp, Search, CalendarIcon, X, Menu, RefreshCw } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -562,6 +562,15 @@ const Dashboard = () => {
               <span className="text-sm text-muted-foreground hidden md:block">
                 Welcome back! Track your finances professionally.
               </span>
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.reload()} 
+                size="sm"
+                className="hover-lift border-border/40 bg-card/50"
+              >
+                <RefreshCw className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Refresh</span>
+              </Button>
               <Button 
                 variant="outline" 
                 onClick={signOut} 
