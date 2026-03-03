@@ -23,6 +23,8 @@ import DataUpload from '@/components/Dashboard/DataUpload';
 import DeleteData from '@/components/Dashboard/DeleteData';
 import QuickAddExpense from '@/components/Dashboard/QuickAddExpense';
 import UpcomingReminders from '@/components/Dashboard/UpcomingReminders';
+import ExportPdfReport from '@/components/Dashboard/ExportPdfReport';
+import BottomNav from '@/components/Dashboard/BottomNav';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -32,6 +34,7 @@ const Dashboard = () => {
   const [expenseSearchTerm, setExpenseSearchTerm] = useState('');
   const [expenseStartDate, setExpenseStartDate] = useState<Date | undefined>(undefined);
   const [expenseEndDate, setExpenseEndDate] = useState<Date | undefined>(undefined);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Income date range filter
   const [incomeStartDate, setIncomeStartDate] = useState<Date | undefined>(undefined);
@@ -519,7 +522,7 @@ const Dashboard = () => {
     }
   };
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -562,6 +565,7 @@ const Dashboard = () => {
               <span className="text-sm text-muted-foreground hidden md:block">
                 Welcome back! Track your finances professionally.
               </span>
+              <ExportPdfReport selectedMonth={selectedMonth} selectedYear={selectedYear} />
               <Button 
                 variant="outline" 
                 onClick={() => window.location.reload()} 
@@ -600,7 +604,7 @@ const Dashboard = () => {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8 overflow-auto">
           <div className="max-w-7xl mx-auto space-y-4 sm:space-y-8">
             {/* Upcoming EMI/SIP Reminders */}
             <UpcomingReminders />
@@ -617,6 +621,9 @@ const Dashboard = () => {
           </div>
         </main>
       </div>
+
+      {/* Bottom Navigation for Mobile */}
+      <BottomNav activeSection={activeSection} setActiveSection={setActiveSection} />
 
       {/* Floating Quick Add Expense Button */}
       <QuickAddExpense />

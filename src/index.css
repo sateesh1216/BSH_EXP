@@ -256,4 +256,8 @@ All colors MUST be HSL. Gradients and shadows for professional appearance.
   .dark .glass-effect {
     @apply bg-slate-900/80 border-slate-800/20;
   }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
