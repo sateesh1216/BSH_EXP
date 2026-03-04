@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LogOut, TrendingUp, Search, CalendarIcon, X, Menu, RefreshCw } from 'lucide-react';
+import { LogOut, TrendingUp, Search, CalendarIcon, X, Menu, RefreshCw, TrendingDown, PiggyBank, BarChart3, Download, Upload, Trash2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -26,6 +26,16 @@ import UpcomingReminders from '@/components/Dashboard/UpcomingReminders';
 import ExportPdfReport from '@/components/Dashboard/ExportPdfReport';
 import BottomNav from '@/components/Dashboard/BottomNav';
 
+const sectionMeta: Record<string, { label: string; icon: any; description: string }> = {
+  income: { label: 'Income', icon: TrendingUp, description: 'Track and manage your income sources' },
+  expenses: { label: 'Expenses', icon: TrendingDown, description: 'Monitor and categorize your spending' },
+  savings: { label: 'Savings', icon: PiggyBank, description: 'Track your savings and investments' },
+  reports: { label: 'Reports', icon: BarChart3, description: 'Analyze your financial data' },
+  download: { label: 'Download Data', icon: Download, description: 'Export your financial records' },
+  upload: { label: 'Upload Data', icon: Upload, description: 'Import data from spreadsheets' },
+  delete: { label: 'Delete Data', icon: Trash2, description: 'Remove financial records' },
+};
+
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const [activeSection, setActiveSection] = useState('income');
@@ -36,26 +46,16 @@ const Dashboard = () => {
   const [expenseEndDate, setExpenseEndDate] = useState<Date | undefined>(undefined);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
-  // Income date range filter
   const [incomeStartDate, setIncomeStartDate] = useState<Date | undefined>(undefined);
   const [incomeEndDate, setIncomeEndDate] = useState<Date | undefined>(undefined);
-  
-  // Savings date range filter
   const [savingsStartDate, setSavingsStartDate] = useState<Date | undefined>(undefined);
   const [savingsEndDate, setSavingsEndDate] = useState<Date | undefined>(undefined);
 
-  // Calculate date range for expense search total
   const getDateRange = () => {
     if (selectedYear === 'all') {
-      // Show all available data
-      return {
-        start: '2020-01-01', // Start from a reasonable past date
-        end: format(new Date(), 'yyyy-MM-dd') // End at today
-      };
+      return { start: '2020-01-01', end: format(new Date(), 'yyyy-MM-dd') };
     }
-
     const year = parseInt(selectedYear);
-    
     if (selectedMonth === 'all') {
       return {
         start: format(startOfYear(new Date(year, 0, 1)), 'yyyy-MM-dd'),
@@ -71,12 +71,10 @@ const Dashboard = () => {
     }
   };
 
-  // Query for filtered expenses total (search term)
   const { data: filteredExpensesTotal } = useQuery({
     queryKey: ['filtered-expenses-total', selectedYear, selectedMonth, expenseSearchTerm],
     queryFn: async () => {
       if (!expenseSearchTerm.trim()) return 0;
-      
       const { start, end } = getDateRange();
       let query = supabase
         .from('expenses')
@@ -85,112 +83,63 @@ const Dashboard = () => {
         .gte('date', start)
         .lte('date', end)
         .ilike('expense_details', `%${expenseSearchTerm.trim()}%`);
-
       const { data, error } = await query;
       if (error) throw error;
-      
       return data?.reduce((sum, expense) => sum + Number(expense.amount), 0) || 0;
     },
     enabled: !!user?.id && !!expenseSearchTerm.trim(),
   });
 
-  // Query for date range expenses total
   const { data: dateRangeExpensesTotal } = useQuery({
     queryKey: ['date-range-expenses-total', expenseStartDate?.toISOString(), expenseEndDate?.toISOString(), expenseSearchTerm],
     queryFn: async () => {
       if (!expenseStartDate && !expenseEndDate) return 0;
-      
       const start = expenseStartDate ? format(expenseStartDate, 'yyyy-MM-dd') : '2020-01-01';
       const end = expenseEndDate ? format(expenseEndDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
-      
-      let query = supabase
-        .from('expenses')
-        .select('amount')
-        .eq('user_id', user?.id)
-        .gte('date', start)
-        .lte('date', end);
-
+      let query = supabase.from('expenses').select('amount').eq('user_id', user?.id).gte('date', start).lte('date', end);
       if (expenseSearchTerm.trim()) {
         query = query.ilike('expense_details', `%${expenseSearchTerm.trim()}%`);
       }
-
       const { data, error } = await query;
       if (error) throw error;
-      
       return data?.reduce((sum, expense) => sum + Number(expense.amount), 0) || 0;
     },
     enabled: !!user?.id && (!!expenseStartDate || !!expenseEndDate),
   });
 
-  // Query for date range income total
   const { data: dateRangeIncomeTotal } = useQuery({
     queryKey: ['date-range-income-total', incomeStartDate?.toISOString(), incomeEndDate?.toISOString()],
     queryFn: async () => {
       if (!incomeStartDate && !incomeEndDate) return 0;
-      
       const start = incomeStartDate ? format(incomeStartDate, 'yyyy-MM-dd') : '2020-01-01';
       const end = incomeEndDate ? format(incomeEndDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('income')
-        .select('amount')
-        .eq('user_id', user?.id)
-        .gte('date', start)
-        .lte('date', end);
-
+      const { data, error } = await supabase.from('income').select('amount').eq('user_id', user?.id).gte('date', start).lte('date', end);
       if (error) throw error;
-      
       return data?.reduce((sum, income) => sum + Number(income.amount), 0) || 0;
     },
     enabled: !!user?.id && (!!incomeStartDate || !!incomeEndDate),
   });
 
-  // Query for date range savings total
   const { data: dateRangeSavingsTotal } = useQuery({
     queryKey: ['date-range-savings-total', savingsStartDate?.toISOString(), savingsEndDate?.toISOString()],
     queryFn: async () => {
       if (!savingsStartDate && !savingsEndDate) return 0;
-      
       const start = savingsStartDate ? format(savingsStartDate, 'yyyy-MM-dd') : '2020-01-01';
       const end = savingsEndDate ? format(savingsEndDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
-      
-      const { data, error } = await supabase
-        .from('savings')
-        .select('amount')
-        .eq('user_id', user?.id)
-        .gte('date', start)
-        .lte('date', end);
-
+      const { data, error } = await supabase.from('savings').select('amount').eq('user_id', user?.id).gte('date', start).lte('date', end);
       if (error) throw error;
-      
       return data?.reduce((sum, saving) => sum + Number(saving.amount), 0) || 0;
     },
     enabled: !!user?.id && (!!savingsStartDate || !!savingsEndDate),
   });
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(amount);
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
   };
 
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
-
-  const renderForm = () => {
-    switch (activeSection) {
-      case 'income':
-        return <IncomeForm />;
-      case 'expenses':
-        return <ExpenseForm />;
-      case 'savings':
-        return <SavingsForm />;
-      default:
-        return null;
-    }
-  };
 
   const renderContent = () => {
     switch (activeSection) {
@@ -198,98 +147,49 @@ const Dashboard = () => {
         return (
           <div className="space-y-6">
             <IncomeForm />
-            {/* Date Range Filter for Income */}
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-[140px] justify-start text-left font-normal",
-                        !incomeStartDate && "text-muted-foreground"
-                      )}
-                    >
+                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !incomeStartDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {incomeStartDate ? format(incomeStartDate, "dd/MM/yyyy") : "From Date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={incomeStartDate}
-                      onSelect={setIncomeStartDate}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
+                    <Calendar mode="single" selected={incomeStartDate} onSelect={setIncomeStartDate} initialFocus className="p-3 pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
-                
                 <span className="text-muted-foreground">to</span>
-                
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-[140px] justify-start text-left font-normal",
-                        !incomeEndDate && "text-muted-foreground"
-                      )}
-                    >
+                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !incomeEndDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {incomeEndDate ? format(incomeEndDate, "dd/MM/yyyy") : "To Date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={incomeEndDate}
-                      onSelect={setIncomeEndDate}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
+                    <Calendar mode="single" selected={incomeEndDate} onSelect={setIncomeEndDate} initialFocus className="p-3 pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
-                
                 {(incomeStartDate || incomeEndDate) && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setIncomeStartDate(undefined);
-                      setIncomeEndDate(undefined);
-                    }}
-                    className="h-9 w-9"
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => { setIncomeStartDate(undefined); setIncomeEndDate(undefined); }} className="h-9 w-9">
                     <X className="h-4 w-4" />
                   </Button>
                 )}
               </div>
-              
-              {/* Date Range Total Display */}
               {(incomeStartDate || incomeEndDate) && dateRangeIncomeTotal !== undefined && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-card border rounded-lg">
                   <span className="text-sm text-muted-foreground">
-                    {incomeStartDate && incomeEndDate 
+                    {incomeStartDate && incomeEndDate
                       ? `${format(incomeStartDate, 'dd/MM/yyyy')} - ${format(incomeEndDate, 'dd/MM/yyyy')}`
-                      : incomeStartDate 
-                        ? `From ${format(incomeStartDate, 'dd/MM/yyyy')}`
-                        : `To ${format(incomeEndDate!, 'dd/MM/yyyy')}`
-                    }:
+                      : incomeStartDate ? `From ${format(incomeStartDate, 'dd/MM/yyyy')}` : `To ${format(incomeEndDate!, 'dd/MM/yyyy')}`}:
                   </span>
-                  <span className="text-sm font-semibold text-income-green">
-                    {formatCurrency(dateRangeIncomeTotal)}
-                  </span>
+                  <span className="text-sm font-semibold text-income-green">{formatCurrency(dateRangeIncomeTotal)}</span>
                 </div>
               )}
             </div>
-            <EditableDataTable 
-              type="income" 
-              selectedMonth={selectedMonth} 
-              selectedYear={selectedYear}
-              startDate={incomeStartDate}
-              endDate={incomeEndDate}
-            />
+            <EditableDataTable type="income" selectedMonth={selectedMonth} selectedYear={selectedYear} startDate={incomeStartDate} endDate={incomeEndDate} />
           </div>
         );
       case 'expenses':
@@ -299,239 +199,131 @@ const Dashboard = () => {
             <div className="flex flex-wrap items-center gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Search expenses..."
-                  value={expenseSearchTerm}
-                  onChange={(e) => setExpenseSearchTerm(e.target.value)}
-                  className="pl-10 w-[200px]"
-                />
+                <Input placeholder="Search expenses..." value={expenseSearchTerm} onChange={(e) => setExpenseSearchTerm(e.target.value)} className="pl-10 w-[200px]" />
               </div>
-              
-              {/* Date Range Filter */}
               <div className="flex items-center gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-[140px] justify-start text-left font-normal",
-                        !expenseStartDate && "text-muted-foreground"
-                      )}
-                    >
+                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !expenseStartDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {expenseStartDate ? format(expenseStartDate, "dd/MM/yyyy") : "From Date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={expenseStartDate}
-                      onSelect={setExpenseStartDate}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
+                    <Calendar mode="single" selected={expenseStartDate} onSelect={setExpenseStartDate} initialFocus className="p-3 pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
-                
                 <span className="text-muted-foreground">to</span>
-                
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-[140px] justify-start text-left font-normal",
-                        !expenseEndDate && "text-muted-foreground"
-                      )}
-                    >
+                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !expenseEndDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {expenseEndDate ? format(expenseEndDate, "dd/MM/yyyy") : "To Date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={expenseEndDate}
-                      onSelect={setExpenseEndDate}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
+                    <Calendar mode="single" selected={expenseEndDate} onSelect={setExpenseEndDate} initialFocus className="p-3 pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
-                
                 {(expenseStartDate || expenseEndDate) && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setExpenseStartDate(undefined);
-                      setExpenseEndDate(undefined);
-                    }}
-                    className="h-9 w-9"
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => { setExpenseStartDate(undefined); setExpenseEndDate(undefined); }} className="h-9 w-9">
                     <X className="h-4 w-4" />
                   </Button>
                 )}
               </div>
-              
-              {/* Date Range Total Display */}
               {(expenseStartDate || expenseEndDate) && dateRangeExpensesTotal !== undefined && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-card border rounded-lg">
                   <span className="text-sm text-muted-foreground">
-                    {expenseStartDate && expenseEndDate 
+                    {expenseStartDate && expenseEndDate
                       ? `${format(expenseStartDate, 'dd/MM/yyyy')} - ${format(expenseEndDate, 'dd/MM/yyyy')}`
-                      : expenseStartDate 
-                        ? `From ${format(expenseStartDate, 'dd/MM/yyyy')}`
-                        : `To ${format(expenseEndDate!, 'dd/MM/yyyy')}`
-                    }:
+                      : expenseStartDate ? `From ${format(expenseStartDate, 'dd/MM/yyyy')}` : `To ${format(expenseEndDate!, 'dd/MM/yyyy')}`}:
                   </span>
-                  <span className="text-sm font-semibold text-expense-red">
-                    {formatCurrency(dateRangeExpensesTotal)}
-                  </span>
+                  <span className="text-sm font-semibold text-expense-red">{formatCurrency(dateRangeExpensesTotal)}</span>
                 </div>
               )}
-              
-              {/* Search Term Total Display (when no date range) */}
               {expenseSearchTerm.trim() && !expenseStartDate && !expenseEndDate && filteredExpensesTotal !== undefined && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-card border rounded-lg">
                   <span className="text-sm text-muted-foreground">Total:</span>
-                  <span className="text-sm font-semibold text-expense-red">
-                    {formatCurrency(filteredExpensesTotal)}
-                  </span>
+                  <span className="text-sm font-semibold text-expense-red">{formatCurrency(filteredExpensesTotal)}</span>
                 </div>
               )}
             </div>
-            <EditableDataTable 
-              type="expenses" 
-              selectedMonth={selectedMonth} 
-              selectedYear={selectedYear}
-              searchTerm={expenseSearchTerm}
-              startDate={expenseStartDate}
-              endDate={expenseEndDate}
-            />
+            <EditableDataTable type="expenses" selectedMonth={selectedMonth} selectedYear={selectedYear} searchTerm={expenseSearchTerm} startDate={expenseStartDate} endDate={expenseEndDate} />
           </div>
         );
       case 'savings':
         return (
           <div className="space-y-6">
             <SavingsForm />
-            {/* Date Range Filter for Savings */}
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-[140px] justify-start text-left font-normal",
-                        !savingsStartDate && "text-muted-foreground"
-                      )}
-                    >
+                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !savingsStartDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {savingsStartDate ? format(savingsStartDate, "dd/MM/yyyy") : "From Date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={savingsStartDate}
-                      onSelect={setSavingsStartDate}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
+                    <Calendar mode="single" selected={savingsStartDate} onSelect={setSavingsStartDate} initialFocus className="p-3 pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
-                
                 <span className="text-muted-foreground">to</span>
-                
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-[140px] justify-start text-left font-normal",
-                        !savingsEndDate && "text-muted-foreground"
-                      )}
-                    >
+                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !savingsEndDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {savingsEndDate ? format(savingsEndDate, "dd/MM/yyyy") : "To Date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={savingsEndDate}
-                      onSelect={setSavingsEndDate}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
+                    <Calendar mode="single" selected={savingsEndDate} onSelect={setSavingsEndDate} initialFocus className="p-3 pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
-                
                 {(savingsStartDate || savingsEndDate) && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setSavingsStartDate(undefined);
-                      setSavingsEndDate(undefined);
-                    }}
-                    className="h-9 w-9"
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => { setSavingsStartDate(undefined); setSavingsEndDate(undefined); }} className="h-9 w-9">
                     <X className="h-4 w-4" />
                   </Button>
                 )}
               </div>
-              
-              {/* Date Range Total Display */}
               {(savingsStartDate || savingsEndDate) && dateRangeSavingsTotal !== undefined && (
                 <div className="flex items-center gap-2 px-3 py-2 bg-card border rounded-lg">
                   <span className="text-sm text-muted-foreground">
-                    {savingsStartDate && savingsEndDate 
+                    {savingsStartDate && savingsEndDate
                       ? `${format(savingsStartDate, 'dd/MM/yyyy')} - ${format(savingsEndDate, 'dd/MM/yyyy')}`
-                      : savingsStartDate 
-                        ? `From ${format(savingsStartDate, 'dd/MM/yyyy')}`
-                        : `To ${format(savingsEndDate!, 'dd/MM/yyyy')}`
-                    }:
+                      : savingsStartDate ? `From ${format(savingsStartDate, 'dd/MM/yyyy')}` : `To ${format(savingsEndDate!, 'dd/MM/yyyy')}`}:
                   </span>
-                  <span className="text-sm font-semibold text-savings-blue">
-                    {formatCurrency(dateRangeSavingsTotal)}
-                  </span>
+                  <span className="text-sm font-semibold text-expense-blue">{formatCurrency(dateRangeSavingsTotal)}</span>
                 </div>
               )}
             </div>
-            <EditableDataTable 
-              type="savings" 
-              selectedMonth={selectedMonth} 
-              selectedYear={selectedYear}
-              startDate={savingsStartDate}
-              endDate={savingsEndDate}
-            />
+            <EditableDataTable type="savings" selectedMonth={selectedMonth} selectedYear={selectedYear} startDate={savingsStartDate} endDate={savingsEndDate} />
           </div>
         );
-        case 'reports':
-          return <Reports selectedMonth={selectedMonth} selectedYear={selectedYear} />;
-        case 'download':
-          return <DownloadData />;
-        case 'upload':
-          return <DataUpload />;
-        case 'delete':
-          return <DeleteData />;
+      case 'reports':
+        return <Reports selectedMonth={selectedMonth} selectedYear={selectedYear} />;
+      case 'download':
+        return <DownloadData />;
+      case 'upload':
+        return <DataUpload />;
+      case 'delete':
+        return <DeleteData />;
       default:
         return null;
     }
   };
 
-  
+  const currentMeta = sectionMeta[activeSection];
+  const SectionIcon = currentMeta?.icon;
 
   return (
     <div className="min-h-screen bg-transparent">
-      {/* Professional Header */}
-      <header className="glass-effect border-b border-border/50 sticky top-0 z-50 backdrop-blur-md">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-3 sm:py-4">
-            <div className="flex items-center gap-2 sm:gap-3 animate-fade-in">
-              {/* Mobile Menu Button */}
+      {/* Header */}
+      <header className="glass-effect border-b border-border/50 sticky top-0 z-50 backdrop-blur-md h-[65px]">
+        <div className="px-4 sm:px-6 lg:px-8 h-full">
+          <div className="flex justify-between items-center h-full">
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Mobile Menu */}
               <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className="lg:hidden shrink-0">
@@ -541,10 +333,7 @@ const Dashboard = () => {
                 <SheetContent side="left" className="p-0 w-80">
                   <Sidebar
                     activeSection={activeSection}
-                    setActiveSection={(section) => {
-                      setActiveSection(section);
-                      setSidebarOpen(false);
-                    }}
+                    setActiveSection={(section) => { setActiveSection(section); setSidebarOpen(false); }}
                     selectedMonth={selectedMonth}
                     setSelectedMonth={setSelectedMonth}
                     selectedYear={selectedYear}
@@ -552,35 +341,24 @@ const Dashboard = () => {
                   />
                 </SheetContent>
               </Sheet>
-              
               <div className="p-1.5 sm:p-2 bg-gradient-primary rounded-lg sm:rounded-xl shadow-glow">
                 <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-lg sm:text-2xl font-bold text-gradient">BSH Accounts</h1>
+                <h1 className="text-lg sm:text-xl font-bold text-gradient">BSH Accounts</h1>
                 <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Financial Management System</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 sm:gap-4 animate-fade-in [animation-delay:0.2s]">
-              <span className="text-sm text-muted-foreground hidden md:block">
-                Welcome back! Track your finances professionally.
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="text-sm text-muted-foreground hidden xl:block">
+                Welcome back, {user?.email?.split('@')[0]}
               </span>
               <ExportPdfReport selectedMonth={selectedMonth} selectedYear={selectedYear} />
-              <Button 
-                variant="outline" 
-                onClick={() => window.location.reload()} 
-                size="sm"
-                className="hover-lift border-border/40 bg-card/50"
-              >
+              <Button variant="outline" onClick={() => window.location.reload()} size="sm" className="hover-lift border-border/40 bg-card/50">
                 <RefreshCw className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Refresh</span>
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={signOut} 
-                size="sm"
-                className="hover-lift border-border/40 bg-card/50"
-              >
+              <Button variant="outline" onClick={signOut} size="sm" className="hover-lift border-border/40 bg-card/50">
                 <LogOut className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Logout</span>
               </Button>
@@ -591,7 +369,7 @@ const Dashboard = () => {
 
       {/* Main Layout */}
       <div className="flex">
-        {/* Sidebar - Hidden on mobile */}
+        {/* Sidebar - Desktop only */}
         <div className="hidden lg:block">
           <Sidebar
             activeSection={activeSection}
@@ -604,28 +382,35 @@ const Dashboard = () => {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8 overflow-auto">
-          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-8">
-            {/* Upcoming EMI/SIP Reminders */}
+        <main className="flex-1 min-w-0 pb-20 lg:pb-0 overflow-auto">
+          <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+            {/* Reminders */}
             <UpcomingReminders />
 
             {/* Summary Cards */}
-            <div className="animate-slide-up">
-              <MonthlySummaryCards selectedMonth={selectedMonth} selectedYear={selectedYear} />
-            </div>
+            <MonthlySummaryCards selectedMonth={selectedMonth} selectedYear={selectedYear} />
+
+            {/* Section Header - Desktop */}
+            {currentMeta && (
+              <div className="hidden lg:flex items-center gap-3 pb-2 border-b border-border/40">
+                {SectionIcon && <SectionIcon className="h-5 w-5 text-primary" />}
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">{currentMeta.label}</h2>
+                  <p className="text-sm text-muted-foreground">{currentMeta.description}</p>
+                </div>
+              </div>
+            )}
 
             {/* Dynamic Content */}
-            <div className="animate-slide-up [animation-delay:0.3s]">
-              {renderContent()}
-            </div>
+            <div>{renderContent()}</div>
           </div>
         </main>
       </div>
 
-      {/* Bottom Navigation for Mobile */}
+      {/* Mobile Bottom Nav */}
       <BottomNav activeSection={activeSection} setActiveSection={setActiveSection} />
 
-      {/* Floating Quick Add Expense Button */}
+      {/* Quick Add */}
       <QuickAddExpense />
     </div>
   );

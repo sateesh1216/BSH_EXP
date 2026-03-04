@@ -1,11 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, PiggyBank, BarChart3, Calendar, Download, Upload, Shield, Key, Trash2, User } from 'lucide-react';
+import { TrendingUp, TrendingDown, PiggyBank, BarChart3, Calendar, Download, Upload, Shield, Key, Trash2, User, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 interface SidebarProps {
   activeSection: string;
@@ -41,18 +43,20 @@ const Sidebar = ({
     checkDbRole();
   }, [user]);
 
-  const sections = [
-    { id: 'income', label: 'Income', icon: TrendingUp, color: 'text-expense-green' },
+  const mainSections = [
+    { id: 'income', label: 'Income', icon: TrendingUp, color: 'text-success' },
     { id: 'expenses', label: 'Expenses', icon: TrendingDown, color: 'text-expense-red' },
     { id: 'savings', label: 'Savings', icon: PiggyBank, color: 'text-expense-blue' },
     { id: 'reports', label: 'Reports', icon: BarChart3, color: 'text-primary' },
-    { id: 'download', label: 'Download Data', icon: Download, color: 'text-primary' },
-    { id: 'upload', label: 'Upload Data', icon: Upload, color: 'text-primary' },
-    { id: 'delete', label: 'Delete Data', icon: Trash2, color: 'text-destructive' },
+  ];
+
+  const toolSections = [
+    { id: 'download', label: 'Download Data', icon: Download },
+    { id: 'upload', label: 'Upload Data', icon: Upload },
+    { id: 'delete', label: 'Delete Data', icon: Trash2, destructive: true },
   ];
 
   const currentYear = new Date().getFullYear();
-  // Include years from 2 years in future to 5 years in past to handle all data scenarios
   const years = Array.from({ length: 8 }, (_, i) => currentYear + 2 - i);
   const months = [
     { value: '01', label: 'January' },
@@ -70,114 +74,137 @@ const Sidebar = ({
   ];
 
   return (
-    <div className="w-80 bg-card border-r border-border h-full lg:h-[calc(100vh-73px)] p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
-      {/* Filter Section */}
-      <Card className="p-3 sm:p-4">
-        <div className="flex items-center gap-2 mb-3 sm:mb-4">
-          <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-          <h3 className="font-semibold text-sm sm:text-base">Filter Data</h3>
-        </div>
+    <div className="w-72 xl:w-80 bg-card/80 backdrop-blur-sm border-r border-border/50 h-[calc(100vh-65px)] sticky top-[65px] flex flex-col overflow-hidden">
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-5 scrollbar-thin">
         
-        <div className="space-y-3 sm:space-y-4">
-          <div>
-            <label className="text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 block">Year</label>
+        {/* Date Filters - compact inline */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Calendar className="h-4 w-4 text-primary" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Filter Period</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
             <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="h-9 sm:h-10">
-                <SelectValue placeholder="Select year" />
+              <SelectTrigger className="h-9 text-sm bg-background/50">
+                <SelectValue placeholder="Year" />
               </SelectTrigger>
-               <SelectContent>
+              <SelectContent>
                 <SelectItem value="all">All Years</SelectItem>
                 {years.map((year) => (
-                  <SelectItem key={year} value={year.toString()}>
-                    {year}
-                  </SelectItem>
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          
-          <div>
-            <label className="text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 block">Month</label>
             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="h-9 sm:h-10">
-                <SelectValue placeholder="Select month" />
+              <SelectTrigger className="h-9 text-sm bg-background/50">
+                <SelectValue placeholder="Month" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Months</SelectItem>
                 {months.map((month) => (
-                  <SelectItem key={month.value} value={month.value}>
-                    {month.label}
-                  </SelectItem>
+                  <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
         </div>
-      </Card>
 
-      {/* Navigation Section */}
-      <Card className="p-3 sm:p-4">
-        <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Sections</h3>
-        <div className="space-y-1 sm:space-y-2">
-          {sections.map((section) => {
-            const Icon = section.icon;
-            return (
-              <Button
-                key={section.id}
-                variant={activeSection === section.id ? "default" : "ghost"}
-                className="w-full justify-start gap-2 sm:gap-3 h-10 sm:h-12"
-                onClick={() => setActiveSection(section.id)}
-              >
-                <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${section.color}`} />
-                <span className="font-medium text-sm sm:text-base">{section.label}</span>
-              </Button>
-            );
-          })}
-        </div>
-      </Card>
+        <Separator className="opacity-50" />
 
-      {/* Admin Panel - Only visible for admins */}
-      {isAdmin && (
-        <Card className="p-3 sm:p-4">
-          <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Administration</h3>
-          <Link to="/admin">
-            <Button variant="default" className="w-full justify-start gap-2 sm:gap-3 h-10 sm:h-12">
-              <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="font-medium text-sm sm:text-base">Admin Panel</span>
-            </Button>
-          </Link>
-        </Card>
-      )}
+        {/* Main Navigation */}
+        <div>
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Navigation</span>
+          <div className="space-y-0.5">
+            {mainSections.map((section) => {
+              const Icon = section.icon;
+              const isActive = activeSection === section.id;
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id)}
+                  className={cn(
+                    'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group',
+                    isActive
+                      ? 'bg-primary text-primary-foreground shadow-md'
+                      : 'text-foreground/70 hover:bg-accent hover:text-foreground'
+                  )}
+                >
+                  <Icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-primary-foreground' : section.color)} />
+                  <span className="flex-1 text-left">{section.label}</span>
+                  {isActive && <ChevronRight className="h-4 w-4 opacity-70" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-      {/* Profile Section */}
-      <Card className="p-3 sm:p-4">
-        <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Account</h3>
-        <div className="space-y-1 sm:space-y-2">
-          <Link to="/profile">
-            <Button variant="ghost" className="w-full justify-start gap-2 sm:gap-3 h-10 sm:h-12">
-              <User className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-              <span className="font-medium text-sm sm:text-base">Profile Settings</span>
-            </Button>
-          </Link>
-          <Link to="/change-password">
-            <Button variant="ghost" className="w-full justify-start gap-2 sm:gap-3 h-10 sm:h-12">
-              <Key className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-              <span className="font-medium text-sm sm:text-base">Change Password</span>
-            </Button>
-          </Link>
+        <Separator className="opacity-50" />
+
+        {/* Tools */}
+        <div>
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Data Tools</span>
+          <div className="space-y-0.5">
+            {toolSections.map((section) => {
+              const Icon = section.icon;
+              const isActive = activeSection === section.id;
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id)}
+                  className={cn(
+                    'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
+                    isActive
+                      ? 'bg-primary text-primary-foreground shadow-md'
+                      : section.destructive
+                        ? 'text-destructive/70 hover:bg-destructive/10 hover:text-destructive'
+                        : 'text-foreground/70 hover:bg-accent hover:text-foreground'
+                  )}
+                >
+                  <Icon className={cn('h-4 w-4 shrink-0', isActive && 'text-primary-foreground')} />
+                  <span className="flex-1 text-left">{section.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-        {/* Admin Status Debug */}
-        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border text-[10px] sm:text-xs text-muted-foreground space-y-0.5 sm:space-y-1">
-          <p className="truncate">Email: {user?.email || 'Not signed in'}</p>
-          <p>DB Role: <span className={dbRole === 'admin' ? 'text-expense-green font-medium' : 'text-expense-red font-medium'}>{dbRole || 'checking...'}</span></p>
-          <p>
-            Admin status:{" "}
-            <span className={isAdmin ? 'text-expense-green font-medium' : 'text-expense-red font-medium'}>
-              {isAdmin ? 'Yes' : 'No'}
-            </span>
-          </p>
+
+        {/* Admin Panel */}
+        {isAdmin && (
+          <>
+            <Separator className="opacity-50" />
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Administration</span>
+              <Link to="/admin">
+                <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground/70 hover:bg-accent hover:text-foreground transition-all">
+                  <Shield className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="flex-1 text-left">Admin Panel</span>
+                  <ChevronRight className="h-4 w-4 opacity-50" />
+                </button>
+              </Link>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Fixed bottom: Account section */}
+      <div className="border-t border-border/50 p-4 bg-card/90 backdrop-blur-sm space-y-1">
+        <Link to="/profile">
+          <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-foreground/70 hover:bg-accent hover:text-foreground transition-all">
+            <User className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="flex-1 text-left">Profile Settings</span>
+          </button>
+        </Link>
+        <Link to="/change-password">
+          <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-foreground/70 hover:bg-accent hover:text-foreground transition-all">
+            <Key className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="flex-1 text-left">Change Password</span>
+          </button>
+        </Link>
+        <div className="pt-2 px-3 text-[10px] text-muted-foreground/60 truncate">
+          {user?.email}
         </div>
-      </Card>
+      </div>
     </div>
   );
 };
