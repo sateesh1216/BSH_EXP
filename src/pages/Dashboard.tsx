@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LogOut, TrendingUp, Search, CalendarIcon, X, Menu, RefreshCw, TrendingDown, PiggyBank, BarChart3, Download, Upload, Trash2 } from 'lucide-react';
@@ -50,6 +51,9 @@ const Dashboard = () => {
   const [incomeEndDate, setIncomeEndDate] = useState<Date | undefined>(undefined);
   const [savingsStartDate, setSavingsStartDate] = useState<Date | undefined>(undefined);
   const [savingsEndDate, setSavingsEndDate] = useState<Date | undefined>(undefined);
+
+  // Keyboard shortcuts: Alt+1 (Income), Alt+2 (Expenses), Alt+3 (Savings), Alt+4 (Reports)
+  useKeyboardNavigation(setActiveSection);
 
   const getDateRange = () => {
     if (selectedYear === 'all') {
