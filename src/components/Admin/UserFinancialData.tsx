@@ -5,19 +5,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useAdminApi } from '@/hooks/useAdminApi';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
-import { TrendingUp, TrendingDown, PiggyBank, Wallet, Calendar, IndianRupee } from 'lucide-react';
+import { TrendingUp, TrendingDown, PiggyBank, Wallet, Calendar, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import * as XLSX from 'xlsx';
 
 interface UserFinancialDataProps {
   userId: string;
+  userName?: string;
 }
 
-const UserFinancialData = ({ userId }: UserFinancialDataProps) => {
+const UserFinancialData = ({ userId, userName }: UserFinancialDataProps) => {
   const { getUserFinancialData } = useAdminApi();
+  const { toast } = useToast();
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
 
@@ -107,44 +112,102 @@ const UserFinancialData = ({ userId }: UserFinancialDataProps) => {
     },
   ];
 
+  const handleExportExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    // Summary sheet
+    const summaryData = [
+      ['Summary'],
+      ['Total Income', totalIncome],
+      ['Total Expenses', totalExpenses],
+      ['Total Savings', totalSavings],
+      ['Net Balance', netBalance],
+      [],
+      ['Period', selectedYear === 'all' ? 'All Years' : selectedYear, selectedMonth === 'all' ? 'All Months' : months.find(m => m.value === selectedMonth)?.label || ''],
+    ];
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
+
+    // Income sheet
+    if (filteredIncome.length > 0) {
+      const incomeRows = filteredIncome.map((item: any) => ({
+        Date: format(new Date(item.date), 'dd/MM/yyyy'),
+        Source: item.source,
+        Amount: Number(item.amount),
+      }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(incomeRows), 'Income');
+    }
+
+    // Expenses sheet
+    if (filteredExpenses.length > 0) {
+      const expenseRows = filteredExpenses.map((item: any) => ({
+        Date: format(new Date(item.date), 'dd/MM/yyyy'),
+        Details: item.expense_details,
+        'Payment Mode': item.payment_mode,
+        Amount: Number(item.amount),
+      }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(expenseRows), 'Expenses');
+    }
+
+    // Savings sheet
+    if (filteredSavings.length > 0) {
+      const savingsRows = filteredSavings.map((item: any) => ({
+        Date: format(new Date(item.date), 'dd/MM/yyyy'),
+        Details: item.details,
+        Amount: Number(item.amount),
+      }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(savingsRows), 'Savings');
+    }
+
+    const filename = `${(userName || 'user').replace(/\s+/g, '_')}_financial_data.xlsx`;
+    XLSX.writeFile(wb, filename);
+    toast({ title: 'Excel exported successfully' });
+  };
+
   return (
     <div className="space-y-5">
-      {/* Period Filter */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Calendar className="h-4 w-4" />
-          <span className="text-xs font-semibold uppercase tracking-wider">Period</span>
+      {/* Period Filter + Export */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Calendar className="h-4 w-4" />
+            <span className="text-xs font-semibold uppercase tracking-wider">Period</span>
+          </div>
+          <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <SelectTrigger className="h-8 w-[110px] text-sm">
+              <SelectValue placeholder="Year" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Years</SelectItem>
+              {years.map(y => (
+                <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger className="h-8 w-[110px] text-sm">
+              <SelectValue placeholder="Month" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Months</SelectItem>
+              {months.map(m => (
+                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(selectedYear !== 'all' || selectedMonth !== 'all') && (
+            <button
+              onClick={() => { setSelectedYear('all'); setSelectedMonth('all'); }}
+              className="text-xs text-primary hover:underline"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
-        <Select value={selectedYear} onValueChange={setSelectedYear}>
-          <SelectTrigger className="h-8 w-[110px] text-sm">
-            <SelectValue placeholder="Year" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Years</SelectItem>
-            {years.map(y => (
-              <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger className="h-8 w-[110px] text-sm">
-            <SelectValue placeholder="Month" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Months</SelectItem>
-            {months.map(m => (
-              <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {(selectedYear !== 'all' || selectedMonth !== 'all') && (
-          <button
-            onClick={() => { setSelectedYear('all'); setSelectedMonth('all'); }}
-            className="text-xs text-primary hover:underline"
-          >
-            Clear filters
-          </button>
-        )}
+        <Button variant="outline" size="sm" className="gap-2" onClick={handleExportExcel}>
+          <Download className="h-4 w-4" />
+          Export Excel
+        </Button>
       </div>
 
       {/* Summary Cards */}

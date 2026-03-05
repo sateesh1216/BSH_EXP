@@ -425,7 +425,7 @@ const UserManagement = () => {
               Complete financial overview for this user. Use filters to narrow by period.
             </DialogDescription>
           </DialogHeader>
-          {selectedUser && <UserFinancialData userId={selectedUser.user_id} />}
+          {selectedUser && <UserFinancialData userId={selectedUser.user_id} userName={selectedUser.full_name || selectedUser.email} />}
         </DialogContent>
       </Dialog>
     </div>
