@@ -415,11 +415,15 @@ const UserManagement = () => {
 
       {/* View User Data Dialog */}
       <Dialog open={viewDataDialogOpen} onOpenChange={setViewDataDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              Financial Data - {selectedUser?.full_name || selectedUser?.email}
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Eye className="h-5 w-5 text-primary" />
+              Financial Data — {selectedUser?.full_name || selectedUser?.email}
             </DialogTitle>
+            <DialogDescription>
+              Complete financial overview for this user. Use filters to narrow by period.
+            </DialogDescription>
           </DialogHeader>
           {selectedUser && <UserFinancialData userId={selectedUser.user_id} />}
         </DialogContent>
