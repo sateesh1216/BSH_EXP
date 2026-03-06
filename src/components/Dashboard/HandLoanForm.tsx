@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, differenceInDays, differenceInMonths, differenceInYears } from 'date-fns';
 import { sanitizeInput, validateAmount, validateDate, validateTextInput, checkRateLimit, rateLimitKey } from '@/lib/security';
-import { HandCoins, TrendingUp, Calculator, Trash2, CheckCircle, Clock, Edit2, Save, X } from 'lucide-react';
+import { HandCoins, TrendingUp, Trash2, CheckCircle, Clock, Edit2, Save, X } from 'lucide-react';
 
 const HandLoanForm = () => {
   const [borrowerName, setBorrowerName] = useState('');
