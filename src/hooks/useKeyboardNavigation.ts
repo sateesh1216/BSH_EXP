@@ -12,7 +12,8 @@ export const useKeyboardNavigation = (
     '1': 'income',
     '2': 'expenses',
     '3': 'savings',
-    '4': 'reports',
+    '4': 'handloan',
+    '5': 'reports',
   };
 
   useEffect(() => {

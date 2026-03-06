@@ -86,6 +86,45 @@ export type Database = {
         }
         Relationships: []
       }
+      hand_loans: {
+        Row: {
+          amount: number
+          borrower_name: string
+          created_at: string
+          date: string
+          due_date: string | null
+          id: string
+          interest_rate: number
+          interest_type: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          borrower_name: string
+          created_at?: string
+          date: string
+          due_date?: string | null
+          id?: string
+          interest_rate?: number
+          interest_type?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          borrower_name?: string
+          created_at?: string
+          date?: string
+          due_date?: string | null
+          id?: string
+          interest_rate?: number
+          interest_type?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       income: {
         Row: {
           amount: number

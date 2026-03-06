@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, PiggyBank, BarChart3, Calendar, Download, Upload, Shield, Key, Trash2, User, ChevronRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, PiggyBank, BarChart3, Calendar, Download, Upload, Shield, Key, Trash2, User, ChevronRight, HandCoins } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
@@ -47,6 +47,7 @@ const Sidebar = ({
     { id: 'income', label: 'Income', icon: TrendingUp, color: 'text-success' },
     { id: 'expenses', label: 'Expenses', icon: TrendingDown, color: 'text-expense-red' },
     { id: 'savings', label: 'Savings', icon: PiggyBank, color: 'text-expense-blue' },
+    { id: 'handloan', label: 'Hand Loan', icon: HandCoins, color: 'text-primary' },
     { id: 'reports', label: 'Reports', icon: BarChart3, color: 'text-primary' },
   ];
 

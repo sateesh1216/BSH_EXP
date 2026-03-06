@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LogOut, TrendingUp, Search, CalendarIcon, X, Menu, RefreshCw, TrendingDown, PiggyBank, BarChart3, Download, Upload, Trash2 } from 'lucide-react';
+import { LogOut, TrendingUp, Search, CalendarIcon, X, Menu, RefreshCw, TrendingDown, PiggyBank, BarChart3, Download, Upload, Trash2, HandCoins } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -22,6 +22,7 @@ import Reports from '@/components/Dashboard/Reports';
 import DownloadData from '@/components/Dashboard/DownloadData';
 import DataUpload from '@/components/Dashboard/DataUpload';
 import DeleteData from '@/components/Dashboard/DeleteData';
+import HandLoanForm from '@/components/Dashboard/HandLoanForm';
 import QuickAddExpense from '@/components/Dashboard/QuickAddExpense';
 import UpcomingReminders from '@/components/Dashboard/UpcomingReminders';
 import ExportPdfReport from '@/components/Dashboard/ExportPdfReport';
@@ -31,6 +32,7 @@ const sectionMeta: Record<string, { label: string; icon: any; description: strin
   income: { label: 'Income', icon: TrendingUp, description: 'Track and manage your income sources' },
   expenses: { label: 'Expenses', icon: TrendingDown, description: 'Monitor and categorize your spending' },
   savings: { label: 'Savings', icon: PiggyBank, description: 'Track your savings and investments' },
+  handloan: { label: 'Hand Loan', icon: HandCoins, description: 'Track hand loans and calculate interest' },
   reports: { label: 'Reports', icon: BarChart3, description: 'Analyze your financial data' },
   download: { label: 'Download Data', icon: Download, description: 'Export your financial records' },
   upload: { label: 'Upload Data', icon: Upload, description: 'Import data from spreadsheets' },
@@ -304,6 +306,8 @@ const Dashboard = () => {
             <EditableDataTable type="savings" selectedMonth={selectedMonth} selectedYear={selectedYear} startDate={savingsStartDate} endDate={savingsEndDate} />
           </div>
         );
+      case 'handloan':
+        return <HandLoanForm />;
       case 'reports':
         return <Reports selectedMonth={selectedMonth} selectedYear={selectedYear} />;
       case 'download':

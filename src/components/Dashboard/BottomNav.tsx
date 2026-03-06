@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, PiggyBank, BarChart3, MoreHorizontal } from 'lucide-react';
+import { TrendingUp, TrendingDown, PiggyBank, BarChart3, MoreHorizontal, HandCoins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -15,10 +15,11 @@ const primaryItems = [
   { id: 'income', label: 'Income', icon: TrendingUp },
   { id: 'expenses', label: 'Expenses', icon: TrendingDown },
   { id: 'savings', label: 'Savings', icon: PiggyBank },
-  { id: 'reports', label: 'Reports', icon: BarChart3 },
+  { id: 'handloan', label: 'Loan', icon: HandCoins },
 ];
 
 const moreItems = [
+  { id: 'reports', label: 'Reports', icon: BarChart3 },
   { id: 'download', label: 'Download Data', icon: Download },
   { id: 'upload', label: 'Upload Data', icon: Upload },
   { id: 'delete', label: 'Delete Data', icon: Trash2 },
