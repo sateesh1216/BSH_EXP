@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, differenceInDays, differenceInMonths, differenceInYears } from 'date-fns';
 import { sanitizeInput, validateAmount, validateDate, validateTextInput, checkRateLimit, rateLimitKey } from '@/lib/security';
-import { HandCoins, TrendingUp, Calculator, Trash2, CheckCircle, Clock, Edit2, Save, X } from 'lucide-react';
+import { HandCoins, TrendingUp, Trash2, CheckCircle, Clock, Edit2, Save, X } from 'lucide-react';
 
 const HandLoanForm = () => {
   const [borrowerName, setBorrowerName] = useState('');
@@ -25,12 +25,6 @@ const HandLoanForm = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Interest calculator state
-  const [calcPrincipal, setCalcPrincipal] = useState('');
-  const [calcRate, setCalcRate] = useState('');
-  const [calcTime, setCalcTime] = useState('');
-  const [calcTimeUnit, setCalcTimeUnit] = useState('months');
-  const [calcResult, setCalcResult] = useState<{ interest: number; total: number } | null>(null);
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -145,21 +139,6 @@ const HandLoanForm = () => {
     });
   };
 
-  const calculateInterest = () => {
-    const p = parseFloat(calcPrincipal);
-    const r = parseFloat(calcRate);
-    const t = parseFloat(calcTime);
-    if (isNaN(p) || isNaN(r) || isNaN(t) || p <= 0 || r < 0 || t <= 0) {
-      toast({ title: "Error", description: "Please enter valid values", variant: "destructive" });
-      return;
-    }
-    let timeInYears = t;
-    if (calcTimeUnit === 'months') timeInYears = t / 12;
-    else if (calcTimeUnit === 'days') timeInYears = t / 365;
-
-    const interest = (p * r * timeInYears) / 100;
-    setCalcResult({ interest, total: p + interest });
-  };
 
   const calculateLoanInterest = (loan: any) => {
     if (!loan.interest_rate || loan.interest_rate === 0) return 0;
@@ -282,60 +261,6 @@ const HandLoanForm = () => {
         </CardContent>
       </Card>
 
-      {/* Simple Interest Calculator */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <Calculator className="h-5 w-5 text-primary" />
-            Simple Interest Calculator
-          </CardTitle>
-          <CardDescription>Calculate interest: SI = (P × R × T) / 100</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label>Principal (₹)</Label>
-              <Input type="number" step="0.01" min="0" value={calcPrincipal} onChange={(e) => setCalcPrincipal(e.target.value)} placeholder="Amount" />
-            </div>
-            <div className="space-y-2">
-              <Label>Rate (%)</Label>
-              <Input type="number" step="0.01" min="0" value={calcRate} onChange={(e) => setCalcRate(e.target.value)} placeholder="Rate" />
-            </div>
-            <div className="space-y-2">
-              <Label>Time</Label>
-              <div className="flex gap-2">
-                <Input type="number" step="1" min="1" value={calcTime} onChange={(e) => setCalcTime(e.target.value)} placeholder="Time" className="flex-1" />
-                <Select value={calcTimeUnit} onValueChange={setCalcTimeUnit}>
-                  <SelectTrigger className="w-[100px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="days">Days</SelectItem>
-                    <SelectItem value="months">Months</SelectItem>
-                    <SelectItem value="years">Years</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>&nbsp;</Label>
-              <Button onClick={calculateInterest} className="w-full">Calculate</Button>
-            </div>
-          </div>
-          {calcResult && (
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <div className="p-4 bg-accent/50 rounded-lg border">
-                <p className="text-sm text-muted-foreground">Interest</p>
-                <p className="text-2xl font-bold text-primary">{formatCurrency(calcResult.interest)}</p>
-              </div>
-              <div className="p-4 bg-accent/50 rounded-lg border">
-                <p className="text-sm text-muted-foreground">Total Amount</p>
-                <p className="text-2xl font-bold text-success">{formatCurrency(calcResult.total)}</p>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Loans Table */}
       <Card>
