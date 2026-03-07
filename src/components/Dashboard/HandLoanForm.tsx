@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -232,12 +232,12 @@ const HandLoanForm = () => {
     });
   };
 
-  // Interest calculated on REMAINING balance
+  // Interest calculated on REMAINING balance (minimum 1 day)
   const calculateLoanInterest = (loan: any) => {
     if (!loan.interest_rate || loan.interest_rate === 0) return 0;
     const loanDate = new Date(loan.date);
     const endDate = new Date();
-    const days = differenceInDays(endDate, loanDate);
+    const days = Math.max(differenceInDays(endDate, loanDate), 1);
     const timeInYears = days / 365;
     const remainingBalance = getRemainingBalance(loan);
     return (remainingBalance * loan.interest_rate * timeInYears) / 100;
@@ -393,8 +393,8 @@ const HandLoanForm = () => {
                     const loanRepayments = getRepaymentsByLoan(loan.id);
 
                     return (
-                      <>
-                        <TableRow key={loan.id} className={isExpanded ? 'border-b-0' : ''}>
+                      <React.Fragment key={loan.id}>
+                        <TableRow className={isExpanded ? 'border-b-0' : ''}>
                           <TableCell>
                             {isEditing ? (
                               <Input value={editData.borrower_name || ''} onChange={(e) => setEditData({ ...editData, borrower_name: e.target.value })} className="w-32" />
@@ -416,8 +416,12 @@ const HandLoanForm = () => {
                               formatCurrency(loan.amount)
                             )}
                           </TableCell>
-                          <TableCell className="text-success font-medium">
-                            {formatCurrency(totalRepaid)}
+                          <TableCell>
+                            <Button size="sm" variant="outline" className="h-7 text-xs gap-1 text-success border-success/30" onClick={() => {
+                              setRepaymentDialog({ open: true, loanId: loan.id, loanAmount: Number(loan.amount), totalRepaid });
+                            }}>
+                              <IndianRupee className="h-3 w-3" /> {formatCurrency(totalRepaid)}
+                            </Button>
                           </TableCell>
                           <TableCell className="text-warning font-semibold">
                             {formatCurrency(remaining)}
@@ -465,11 +469,7 @@ const HandLoanForm = () => {
                                 </>
                               ) : (
                                 <>
-                                  <Button size="icon" variant="ghost" className="h-8 w-8" title="Add Repayment" onClick={() => {
-                                    setRepaymentDialog({ open: true, loanId: loan.id, loanAmount: Number(loan.amount), totalRepaid });
-                                  }}>
-                                    <IndianRupee className="h-4 w-4 text-success" />
-                                  </Button>
+                                  
                                   {loanRepayments.length > 0 && (
                                     <Button size="icon" variant="ghost" className="h-8 w-8" title="View Repayments" onClick={() => setExpandedLoanId(isExpanded ? null : loan.id)}>
                                       {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -516,7 +516,7 @@ const HandLoanForm = () => {
                             </TableCell>
                           </TableRow>
                         ))}
-                      </>
+                      </React.Fragment>
                     );
                   })}
                 </TableBody>
