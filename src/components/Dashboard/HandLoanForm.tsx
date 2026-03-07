@@ -416,8 +416,12 @@ const HandLoanForm = () => {
                               formatCurrency(loan.amount)
                             )}
                           </TableCell>
-                          <TableCell className="text-success font-medium">
-                            {formatCurrency(totalRepaid)}
+                          <TableCell>
+                            <Button size="sm" variant="outline" className="h-7 text-xs gap-1 text-success border-success/30" onClick={() => {
+                              setRepaymentDialog({ open: true, loanId: loan.id, loanAmount: Number(loan.amount), totalRepaid });
+                            }}>
+                              <IndianRupee className="h-3 w-3" /> {formatCurrency(totalRepaid)}
+                            </Button>
                           </TableCell>
                           <TableCell className="text-warning font-semibold">
                             {formatCurrency(remaining)}
