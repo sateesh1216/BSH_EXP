@@ -469,11 +469,7 @@ const HandLoanForm = () => {
                                 </>
                               ) : (
                                 <>
-                                  <Button size="icon" variant="ghost" className="h-8 w-8" title="Add Repayment" onClick={() => {
-                                    setRepaymentDialog({ open: true, loanId: loan.id, loanAmount: Number(loan.amount), totalRepaid });
-                                  }}>
-                                    <IndianRupee className="h-4 w-4 text-success" />
-                                  </Button>
+                                  
                                   {loanRepayments.length > 0 && (
                                     <Button size="icon" variant="ghost" className="h-8 w-8" title="View Repayments" onClick={() => setExpandedLoanId(isExpanded ? null : loan.id)}>
                                       {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
