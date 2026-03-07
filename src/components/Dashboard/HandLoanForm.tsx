@@ -232,12 +232,12 @@ const HandLoanForm = () => {
     });
   };
 
-  // Interest calculated on REMAINING balance
+  // Interest calculated on REMAINING balance (minimum 1 day)
   const calculateLoanInterest = (loan: any) => {
     if (!loan.interest_rate || loan.interest_rate === 0) return 0;
     const loanDate = new Date(loan.date);
     const endDate = new Date();
-    const days = differenceInDays(endDate, loanDate);
+    const days = Math.max(differenceInDays(endDate, loanDate), 1);
     const timeInYears = days / 365;
     const remainingBalance = getRemainingBalance(loan);
     return (remainingBalance * loan.interest_rate * timeInYears) / 100;
@@ -393,8 +393,8 @@ const HandLoanForm = () => {
                     const loanRepayments = getRepaymentsByLoan(loan.id);
 
                     return (
-                      <>
-                        <TableRow key={loan.id} className={isExpanded ? 'border-b-0' : ''}>
+                      <React.Fragment key={loan.id}>
+                        <TableRow className={isExpanded ? 'border-b-0' : ''}>
                           <TableCell>
                             {isEditing ? (
                               <Input value={editData.borrower_name || ''} onChange={(e) => setEditData({ ...editData, borrower_name: e.target.value })} className="w-32" />
