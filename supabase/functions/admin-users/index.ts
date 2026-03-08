@@ -307,16 +307,20 @@ serve(async (req) => {
       case "get_user_financial_data": {
         const { user_id } = params;
 
-        const [incomeRes, expensesRes, savingsRes] = await Promise.all([
+        const [incomeRes, expensesRes, savingsRes, handLoansRes, repaymentRes] = await Promise.all([
           adminClient.from("income").select("*").eq("user_id", user_id).order("date", { ascending: false }),
           adminClient.from("expenses").select("*").eq("user_id", user_id).order("date", { ascending: false }),
           adminClient.from("savings").select("*").eq("user_id", user_id).order("date", { ascending: false }),
+          adminClient.from("hand_loans").select("*").eq("user_id", user_id).order("date", { ascending: false }),
+          adminClient.from("loan_repayments").select("*").eq("user_id", user_id).order("date", { ascending: false }),
         ]);
 
         return new Response(JSON.stringify({
           income: incomeRes.data || [],
           expenses: expensesRes.data || [],
           savings: savingsRes.data || [],
+          hand_loans: handLoansRes.data || [],
+          loan_repayments: repaymentRes.data || [],
         }), {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },

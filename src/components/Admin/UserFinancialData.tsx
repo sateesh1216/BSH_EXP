@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import { useAdminApi } from '@/hooks/useAdminApi';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { format } from 'date-fns';
-import { TrendingUp, TrendingDown, PiggyBank, Wallet, Calendar, Download } from 'lucide-react';
+import { format, differenceInDays } from 'date-fns';
+import { TrendingUp, TrendingDown, PiggyBank, Wallet, Calendar, Download, HandCoins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
@@ -46,7 +46,6 @@ const UserFinancialData = ({ userId, userName }: UserFinancialDataProps) => {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 6 }, (_, i) => currentYear + 1 - i);
 
-  // Filter data by selected year/month
   const filterByDate = (items: any[] | undefined) => {
     if (!items) return [];
     return items.filter((item: any) => {
@@ -60,10 +59,28 @@ const UserFinancialData = ({ userId, userName }: UserFinancialDataProps) => {
   const filteredIncome = useMemo(() => filterByDate(data?.income), [data?.income, selectedYear, selectedMonth]);
   const filteredExpenses = useMemo(() => filterByDate(data?.expenses), [data?.expenses, selectedYear, selectedMonth]);
   const filteredSavings = useMemo(() => filterByDate(data?.savings), [data?.savings, selectedYear, selectedMonth]);
+  const filteredHandLoans = useMemo(() => filterByDate(data?.hand_loans), [data?.hand_loans, selectedYear, selectedMonth]);
+
+  const repayments = data?.loan_repayments || [];
+
+  const getRepaymentTotal = (loanId: string) =>
+    repayments.filter((r: any) => r.loan_id === loanId).reduce((sum: number, r: any) => sum + Number(r.amount), 0);
+
+  const getRemainingBalance = (loan: any) => Number(loan.amount) - getRepaymentTotal(loan.id);
+
+  const calculateInterest = (loan: any) => {
+    const remaining = getRemainingBalance(loan);
+    if (remaining <= 0 || !loan.interest_rate) return 0;
+    const days = Math.max(differenceInDays(new Date(), new Date(loan.date)), 1);
+    return (remaining * Number(loan.interest_rate) * days) / 365 / 100;
+  };
 
   const totalIncome = filteredIncome.reduce((sum: number, item: any) => sum + Number(item.amount), 0);
   const totalExpenses = filteredExpenses.reduce((sum: number, item: any) => sum + Number(item.amount), 0);
   const totalSavings = filteredSavings.reduce((sum: number, item: any) => sum + Number(item.amount), 0);
+  const totalLoansGiven = filteredHandLoans.reduce((sum: number, item: any) => sum + Number(item.amount), 0);
+  const totalRepaid = filteredHandLoans.reduce((sum: number, loan: any) => sum + getRepaymentTotal(loan.id), 0);
+  const totalRemaining = totalLoansGiven - totalRepaid;
   const netBalance = totalIncome - totalExpenses;
 
   if (isLoading) {
@@ -78,85 +95,55 @@ const UserFinancialData = ({ userId, userName }: UserFinancialDataProps) => {
   }
 
   const summaryCards = [
-    {
-      label: 'Total Income',
-      value: totalIncome,
-      icon: TrendingUp,
-      color: 'text-success',
-      bgColor: 'bg-success/10',
-      count: filteredIncome.length,
-    },
-    {
-      label: 'Total Expenses',
-      value: totalExpenses,
-      icon: TrendingDown,
-      color: 'text-expense-red',
-      bgColor: 'bg-expense-red/10',
-      count: filteredExpenses.length,
-    },
-    {
-      label: 'Total Savings',
-      value: totalSavings,
-      icon: PiggyBank,
-      color: 'text-expense-blue',
-      bgColor: 'bg-expense-blue/10',
-      count: filteredSavings.length,
-    },
-    {
-      label: 'Net Balance',
-      value: netBalance,
-      icon: Wallet,
-      color: netBalance >= 0 ? 'text-success' : 'text-expense-red',
-      bgColor: netBalance >= 0 ? 'bg-success/10' : 'bg-expense-red/10',
-      count: null,
-    },
+    { label: 'Total Income', value: totalIncome, icon: TrendingUp, color: 'text-success', bgColor: 'bg-success/10', count: filteredIncome.length },
+    { label: 'Total Expenses', value: totalExpenses, icon: TrendingDown, color: 'text-expense-red', bgColor: 'bg-expense-red/10', count: filteredExpenses.length },
+    { label: 'Total Savings', value: totalSavings, icon: PiggyBank, color: 'text-expense-blue', bgColor: 'bg-expense-blue/10', count: filteredSavings.length },
+    { label: 'Net Balance', value: netBalance, icon: Wallet, color: netBalance >= 0 ? 'text-success' : 'text-expense-red', bgColor: netBalance >= 0 ? 'bg-success/10' : 'bg-expense-red/10', count: null },
+    { label: 'Loans Given', value: totalLoansGiven, icon: HandCoins, color: 'text-orange-500', bgColor: 'bg-orange-500/10', count: filteredHandLoans.length },
+    { label: 'Remaining Balance', value: totalRemaining, icon: HandCoins, color: 'text-amber-500', bgColor: 'bg-amber-500/10', count: null },
   ];
 
   const handleExportExcel = () => {
     const wb = XLSX.utils.book_new();
 
-    // Summary sheet
     const summaryData = [
       ['Summary'],
       ['Total Income', totalIncome],
       ['Total Expenses', totalExpenses],
       ['Total Savings', totalSavings],
       ['Net Balance', netBalance],
+      ['Loans Given', totalLoansGiven],
+      ['Total Repaid', totalRepaid],
+      ['Remaining Balance', totalRemaining],
       [],
       ['Period', selectedYear === 'all' ? 'All Years' : selectedYear, selectedMonth === 'all' ? 'All Months' : months.find(m => m.value === selectedMonth)?.label || ''],
     ];
-    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-    XLSX.utils.book_append_sheet(wb, summarySheet, 'Summary');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryData), 'Summary');
 
-    // Income sheet
     if (filteredIncome.length > 0) {
-      const incomeRows = filteredIncome.map((item: any) => ({
-        Date: format(new Date(item.date), 'dd/MM/yyyy'),
-        Source: item.source,
-        Amount: Number(item.amount),
-      }));
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(incomeRows), 'Income');
+      const rows = filteredIncome.map((item: any) => ({ Date: format(new Date(item.date), 'dd/MM/yyyy'), Source: item.source, Amount: Number(item.amount) }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Income');
     }
-
-    // Expenses sheet
     if (filteredExpenses.length > 0) {
-      const expenseRows = filteredExpenses.map((item: any) => ({
-        Date: format(new Date(item.date), 'dd/MM/yyyy'),
-        Details: item.expense_details,
-        'Payment Mode': item.payment_mode,
-        Amount: Number(item.amount),
-      }));
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(expenseRows), 'Expenses');
+      const rows = filteredExpenses.map((item: any) => ({ Date: format(new Date(item.date), 'dd/MM/yyyy'), Details: item.expense_details, 'Payment Mode': item.payment_mode, Amount: Number(item.amount) }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Expenses');
     }
-
-    // Savings sheet
     if (filteredSavings.length > 0) {
-      const savingsRows = filteredSavings.map((item: any) => ({
-        Date: format(new Date(item.date), 'dd/MM/yyyy'),
-        Details: item.details,
-        Amount: Number(item.amount),
+      const rows = filteredSavings.map((item: any) => ({ Date: format(new Date(item.date), 'dd/MM/yyyy'), Details: item.details, Amount: Number(item.amount) }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Savings');
+    }
+    if (filteredHandLoans.length > 0) {
+      const rows = filteredHandLoans.map((loan: any) => ({
+        Date: format(new Date(loan.date), 'dd/MM/yyyy'),
+        Borrower: loan.borrower_name,
+        Amount: Number(loan.amount),
+        'Interest Rate': `${loan.interest_rate}%`,
+        Repaid: getRepaymentTotal(loan.id),
+        Remaining: getRemainingBalance(loan),
+        Interest: Math.round(calculateInterest(loan) * 100) / 100,
+        Status: loan.status,
       }));
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(savingsRows), 'Savings');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Hand Loans');
     }
 
     const filename = `${(userName || 'user').replace(/\s+/g, '_')}_financial_data.xlsx`;
@@ -211,7 +198,7 @@ const UserFinancialData = ({ userId, userName }: UserFinancialDataProps) => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {summaryCards.map((card) => {
           const Icon = card.icon;
           return (
@@ -241,21 +228,26 @@ const UserFinancialData = ({ userId, userName }: UserFinancialDataProps) => {
 
       {/* Data Tabs */}
       <Tabs defaultValue="income" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 h-10">
+        <TabsList className="grid w-full grid-cols-4 h-10">
           <TabsTrigger value="income" className="gap-1.5 text-sm">
             <TrendingUp className="h-3.5 w-3.5" />
-            Income
+            <span className="hidden sm:inline">Income</span>
             <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{filteredIncome.length}</Badge>
           </TabsTrigger>
           <TabsTrigger value="expenses" className="gap-1.5 text-sm">
             <TrendingDown className="h-3.5 w-3.5" />
-            Expenses
+            <span className="hidden sm:inline">Expenses</span>
             <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{filteredExpenses.length}</Badge>
           </TabsTrigger>
           <TabsTrigger value="savings" className="gap-1.5 text-sm">
             <PiggyBank className="h-3.5 w-3.5" />
-            Savings
+            <span className="hidden sm:inline">Savings</span>
             <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{filteredSavings.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="handloans" className="gap-1.5 text-sm">
+            <HandCoins className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Loans</span>
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{filteredHandLoans.length}</Badge>
           </TabsTrigger>
         </TabsList>
 
@@ -264,11 +256,7 @@ const UserFinancialData = ({ userId, userName }: UserFinancialDataProps) => {
             columns={['Date', 'Source', 'Amount']}
             rows={filteredIncome.map((item: any) => ({
               id: item.id,
-              cells: [
-                format(new Date(item.date), 'dd MMM yyyy'),
-                item.source,
-                formatCurrency(item.amount),
-              ],
+              cells: [format(new Date(item.date), 'dd MMM yyyy'), item.source, formatCurrency(item.amount)],
             }))}
             amountColorClass="text-success"
             emptyMessage="No income records found"
@@ -280,12 +268,7 @@ const UserFinancialData = ({ userId, userName }: UserFinancialDataProps) => {
             columns={['Date', 'Details', 'Payment', 'Amount']}
             rows={filteredExpenses.map((item: any) => ({
               id: item.id,
-              cells: [
-                format(new Date(item.date), 'dd MMM yyyy'),
-                item.expense_details,
-                item.payment_mode,
-                formatCurrency(item.amount),
-              ],
+              cells: [format(new Date(item.date), 'dd MMM yyyy'), item.expense_details, item.payment_mode, formatCurrency(item.amount)],
             }))}
             amountColorClass="text-expense-red"
             emptyMessage="No expense records found"
@@ -297,14 +280,30 @@ const UserFinancialData = ({ userId, userName }: UserFinancialDataProps) => {
             columns={['Date', 'Details', 'Amount']}
             rows={filteredSavings.map((item: any) => ({
               id: item.id,
-              cells: [
-                format(new Date(item.date), 'dd MMM yyyy'),
-                item.details,
-                formatCurrency(item.amount),
-              ],
+              cells: [format(new Date(item.date), 'dd MMM yyyy'), item.details, formatCurrency(item.amount)],
             }))}
             amountColorClass="text-expense-blue"
             emptyMessage="No savings records found"
+          />
+        </TabsContent>
+
+        <TabsContent value="handloans">
+          <DataTable
+            columns={['Date', 'Borrower', 'Amount', 'Repaid', 'Remaining', 'Interest', 'Status']}
+            rows={filteredHandLoans.map((loan: any) => ({
+              id: loan.id,
+              cells: [
+                format(new Date(loan.date), 'dd MMM yyyy'),
+                loan.borrower_name,
+                formatCurrency(loan.amount),
+                formatCurrency(getRepaymentTotal(loan.id)),
+                formatCurrency(getRemainingBalance(loan)),
+                formatCurrency(Math.round(calculateInterest(loan) * 100) / 100),
+                loan.status,
+              ],
+            }))}
+            amountColorClass="text-orange-500"
+            emptyMessage="No hand loan records found"
           />
         </TabsContent>
       </Tabs>
