@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useAdminApi } from '@/hooks/useAdminApi';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format, differenceInDays } from 'date-fns';
 import { TrendingUp, TrendingDown, PiggyBank, Wallet, Calendar, Download, HandCoins } from 'lucide-react';
 import { cn } from '@/lib/utils';
