@@ -214,7 +214,7 @@ const UserFinancialData = ({ userId, userName }: UserFinancialDataProps) => {
                         </div>
                         <div className="min-w-0">
                           <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{card.label}</p>
-                          <p className={cn('text-lg font-bold truncate', card.color)}>
+                          <p className={cn('text-lg font-bold truncate lg:whitespace-normal lg:overflow-visible', card.color)}>
                             {formatCurrency(card.value)}
                           </p>
                           {card.count !== null && (
