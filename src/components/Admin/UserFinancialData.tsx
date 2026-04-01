@@ -199,31 +199,40 @@ const UserFinancialData = ({ userId, userName }: UserFinancialDataProps) => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {summaryCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <Card key={card.label} className="border-border/50">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className={cn('p-2 rounded-lg shrink-0', card.bgColor)}>
-                    <Icon className={cn('h-4 w-4', card.color)} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{card.label}</p>
-                    <p className={cn('text-lg font-bold truncate', card.color)}>
-                      {formatCurrency(card.value)}
-                    </p>
-                    {card.count !== null && (
-                      <p className="text-[11px] text-muted-foreground">{card.count} records</p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      <TooltipProvider delayDuration={200}>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {summaryCards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <Tooltip key={card.label}>
+                <TooltipTrigger asChild>
+                  <Card className="border-border/50 cursor-default">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className={cn('p-2 rounded-lg shrink-0', card.bgColor)}>
+                          <Icon className={cn('h-4 w-4', card.color)} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{card.label}</p>
+                          <p className={cn('text-lg font-bold truncate', card.color)}>
+                            {formatCurrency(card.value)}
+                          </p>
+                          {card.count !== null && (
+                            <p className="text-[11px] text-muted-foreground">{card.count} records</p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-sm font-semibold">
+                  {card.label}: {formatCurrency(card.value)}
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </div>
+      </TooltipProvider>
 
       <Separator />
 
