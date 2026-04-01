@@ -196,7 +196,7 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
         doc.text(`${rows.length} record${rows.length !== 1 ? 's' : ''}`, marginLeft + 10 + doc.getTextWidth(title) + 4, y);
         y += 6;
 
-        const colStyles: any = { [amountColIdx]: { halign: 'right', fontStyle: 'bold' } };
+        const colStyles: any = { [amountColIdx]: { halign: 'right', fontStyle: 'bold', cellWidth: 35 } };
         if (colWidths) Object.assign(colStyles, colWidths);
 
         autoTable(doc, {
