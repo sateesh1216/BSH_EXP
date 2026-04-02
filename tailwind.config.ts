@@ -47,8 +47,10 @@ export default {
 					DEFAULT: 'hsl(var(--danger))',
 					foreground: 'hsl(var(--danger-foreground))'
 				},
+				'income-green': 'hsl(var(--expense-green))',
 				'expense-green': 'hsl(var(--expense-green))',
 				'expense-red': 'hsl(var(--expense-red))',
+				'savings-blue': 'hsl(var(--expense-blue))',
 				'expense-blue': 'hsl(var(--expense-blue))',
 				'expense-purple': 'hsl(var(--expense-purple))',
 				'expense-amber': 'hsl(var(--expense-amber))',
