@@ -176,8 +176,8 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
         headerColor: [number, number, number],
         columns: string[],
         rows: string[][],
-        amountColIdx: number,
-        colWidths?: { [key: number]: { cellWidth: number } },
+        amountColIndices: number[],
+        colWidths?: { [key: number]: { cellWidth: number; halign?: string } },
       ) => {
         if (rows.length === 0) return;
 
@@ -196,8 +196,16 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
         doc.text(`${rows.length} record${rows.length !== 1 ? 's' : ''}`, marginLeft + 10 + doc.getTextWidth(title) + 4, y);
         y += 6;
 
-        const colStyles: any = { [amountColIdx]: { halign: 'right', fontStyle: 'bold', cellWidth: 35 } };
-        if (colWidths) Object.assign(colStyles, colWidths);
+        const colStyles: any = {};
+        amountColIndices.forEach(idx => {
+          colStyles[idx] = { halign: 'right', fontStyle: 'bold', cellWidth: 30 };
+        });
+        if (colWidths) {
+          Object.keys(colWidths).forEach(key => {
+            const k = Number(key);
+            colStyles[k] = { ...colStyles[k], ...colWidths[k] };
+          });
+        }
 
         autoTable(doc, {
           startY: y,
@@ -208,14 +216,16 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
             fillColor: headerColor,
             textColor: 255,
             fontStyle: 'bold',
-            fontSize: 9,
-            cellPadding: 4,
+            fontSize: 8,
+            cellPadding: 3,
             halign: 'left',
+            overflow: 'linebreak',
           },
           bodyStyles: {
-            fontSize: 9,
-            cellPadding: 3.5,
+            fontSize: 8,
+            cellPadding: 2.5,
             textColor: [40, 40, 40],
+            overflow: 'linebreak',
           },
           alternateRowStyles: {
             fillColor: [248, 250, 252],
@@ -224,9 +234,9 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
           margin: { left: marginLeft, right: marginRight },
           tableLineColor: [220, 220, 220],
           tableLineWidth: 0.2,
+          tableWidth: 'auto',
           didParseCell: (data: any) => {
-            // Style the amount column values
-            if (data.section === 'body' && data.column.index === amountColIdx) {
+            if (data.section === 'body' && amountColIndices.includes(data.column.index)) {
               data.cell.styles.textColor = headerColor;
             }
           },
