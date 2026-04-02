@@ -256,8 +256,8 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
           i.source,
           formatCurrency(Number(i.amount)),
         ]),
-        3,
-        { 0: { cellWidth: 12 } },
+        [3],
+        { 0: { cellWidth: 10 }, 1: { cellWidth: 28 } },
       );
 
       // ── Expenses ──
@@ -272,8 +272,8 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
           e.payment_mode,
           formatCurrency(Number(e.amount)),
         ]),
-        4,
-        { 0: { cellWidth: 12 } },
+        [4],
+        { 0: { cellWidth: 10 }, 1: { cellWidth: 28 }, 3: { cellWidth: 28 } },
       );
 
       // ── Savings ──
@@ -287,8 +287,8 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
           s.details,
           formatCurrency(Number(s.amount)),
         ]),
-        3,
-        { 0: { cellWidth: 12 } },
+        [3],
+        { 0: { cellWidth: 10 }, 1: { cellWidth: 28 } },
       );
 
       // ── Hand Loans ──
@@ -307,8 +307,8 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
             formatCurrency(Math.round(calcInterest(loan) * 100) / 100),
             loan.status,
           ]),
-          3,
-          { 0: { cellWidth: 10 }, 7: { cellWidth: 22 } },
+          [3, 4, 5, 6],
+          { 0: { cellWidth: 8 }, 1: { cellWidth: 24 }, 7: { cellWidth: 20, halign: 'center' } },
         );
       }
 
