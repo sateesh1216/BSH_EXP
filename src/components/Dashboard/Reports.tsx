@@ -407,6 +407,61 @@ const Reports = ({ selectedMonth, selectedYear }: ReportsProps) => {
         </Card>
       </div>
 
+      {/* Category-wise Expense Breakdown */}
+      {categoryData && categoryData.length > 0 && (
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardHeader className="flex flex-row items-center gap-2 pb-2">
+            <PieChartIcon className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">Expense Breakdown by Category</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <ResponsiveContainer width="100%" height={320}>
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={110}
+                    paddingAngle={3}
+                    dataKey="value"
+                    strokeWidth={2}
+                    stroke="hsl(var(--card))"
+                    animationDuration={1000}
+                    animationBegin={200}
+                    label={({ name, percent }) => `${name.length > 12 ? name.slice(0, 12) + '…' : name} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {categoryData.map((_, index) => (
+                      <Cell key={`cat-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex flex-col justify-center space-y-2 max-h-[320px] overflow-y-auto pr-2">
+                {categoryData.map((cat, index) => {
+                  const total = categoryData.reduce((s, c) => s + c.value, 0);
+                  const pct = total > 0 ? ((cat.value / total) * 100).toFixed(1) : '0';
+                  return (
+                    <div key={index} className="flex items-center justify-between gap-3 py-1.5 px-3 rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[index % CATEGORY_COLORS.length] }} />
+                        <span className="text-sm truncate">{cat.name}</span>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-sm font-semibold">{formatCurrency(cat.value)}</span>
+                        <span className="text-xs text-muted-foreground w-12 text-right">{pct}%</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Financial Summary Footer */}
       <Card className="bg-gradient-to-r from-primary/5 via-primary/8 to-primary/5 border-primary/20 hover:shadow-lg transition-shadow duration-300">
         <CardHeader className="pb-3">
