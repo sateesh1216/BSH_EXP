@@ -25,6 +25,7 @@ const CHART_COLORS = {
 };
 
 const PIE_COLORS = ['#22c55e', '#ef4444', '#3b82f6'];
+const CATEGORY_COLORS = ['#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#10b981', '#e11d48', '#0ea5e9', '#a855f7', '#84cc16', '#d946ef'];
 
 const Reports = ({ selectedMonth, selectedYear }: ReportsProps) => {
   const { user } = useAuth();
@@ -106,6 +107,46 @@ const Reports = ({ selectedMonth, selectedYear }: ReportsProps) => {
       const totalSavings = savingsResult.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
 
       return { totalIncome, totalExpenses, totalSavings, netAmount: totalIncome - totalExpenses - totalSavings };
+    },
+    enabled: !!user?.id,
+  });
+
+  const { data: categoryData } = useQuery({
+    queryKey: ['expense-categories', selectedYear, selectedMonth],
+    queryFn: async () => {
+      let startDate, endDate;
+      if (selectedYear === 'all') {
+        startDate = '2020-01-01';
+        endDate = format(new Date(), 'yyyy-MM-dd');
+      } else {
+        const year = parseInt(selectedYear);
+        if (selectedMonth === 'all') {
+          startDate = format(startOfYear(new Date(year, 0, 1)), 'yyyy-MM-dd');
+          endDate = format(endOfYear(new Date(year, 0, 1)), 'yyyy-MM-dd');
+        } else {
+          const month = parseInt(selectedMonth) - 1;
+          const date = new Date(year, month, 1);
+          startDate = format(startOfMonth(date), 'yyyy-MM-dd');
+          endDate = format(endOfMonth(date), 'yyyy-MM-dd');
+        }
+      }
+
+      const { data } = await supabase
+        .from('expenses')
+        .select('expense_details, amount')
+        .eq('user_id', user?.id)
+        .gte('date', startDate)
+        .lte('date', endDate);
+
+      const categoryMap: Record<string, number> = {};
+      data?.forEach(item => {
+        const category = item.expense_details?.trim() || 'Other';
+        categoryMap[category] = (categoryMap[category] || 0) + Number(item.amount);
+      });
+
+      return Object.entries(categoryMap)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value);
     },
     enabled: !!user?.id,
   });
@@ -365,6 +406,61 @@ const Reports = ({ selectedMonth, selectedYear }: ReportsProps) => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Category-wise Expense Breakdown */}
+      {categoryData && categoryData.length > 0 && (
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardHeader className="flex flex-row items-center gap-2 pb-2">
+            <PieChartIcon className="h-5 w-5 text-primary" />
+            <CardTitle className="text-base">Expense Breakdown by Category</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <ResponsiveContainer width="100%" height={320}>
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={110}
+                    paddingAngle={3}
+                    dataKey="value"
+                    strokeWidth={2}
+                    stroke="hsl(var(--card))"
+                    animationDuration={1000}
+                    animationBegin={200}
+                    label={({ name, percent }) => `${name.length > 12 ? name.slice(0, 12) + '…' : name} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {categoryData.map((_, index) => (
+                      <Cell key={`cat-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex flex-col justify-center space-y-2 max-h-[320px] overflow-y-auto pr-2">
+                {categoryData.map((cat, index) => {
+                  const total = categoryData.reduce((s, c) => s + c.value, 0);
+                  const pct = total > 0 ? ((cat.value / total) * 100).toFixed(1) : '0';
+                  return (
+                    <div key={index} className="flex items-center justify-between gap-3 py-1.5 px-3 rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: CATEGORY_COLORS[index % CATEGORY_COLORS.length] }} />
+                        <span className="text-sm truncate">{cat.name}</span>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-sm font-semibold">{formatCurrency(cat.value)}</span>
+                        <span className="text-xs text-muted-foreground w-12 text-right">{pct}%</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Financial Summary Footer */}
       <Card className="bg-gradient-to-r from-primary/5 via-primary/8 to-primary/5 border-primary/20 hover:shadow-lg transition-shadow duration-300">
