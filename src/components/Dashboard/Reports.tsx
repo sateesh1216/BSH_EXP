@@ -25,6 +25,7 @@ const CHART_COLORS = {
 };
 
 const PIE_COLORS = ['#22c55e', '#ef4444', '#3b82f6'];
+const CATEGORY_COLORS = ['#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#10b981', '#e11d48', '#0ea5e9', '#a855f7', '#84cc16', '#d946ef'];
 
 const Reports = ({ selectedMonth, selectedYear }: ReportsProps) => {
   const { user } = useAuth();
