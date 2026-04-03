@@ -111,6 +111,46 @@ const Reports = ({ selectedMonth, selectedYear }: ReportsProps) => {
     enabled: !!user?.id,
   });
 
+  const { data: categoryData } = useQuery({
+    queryKey: ['expense-categories', selectedYear, selectedMonth],
+    queryFn: async () => {
+      let startDate, endDate;
+      if (selectedYear === 'all') {
+        startDate = '2020-01-01';
+        endDate = format(new Date(), 'yyyy-MM-dd');
+      } else {
+        const year = parseInt(selectedYear);
+        if (selectedMonth === 'all') {
+          startDate = format(startOfYear(new Date(year, 0, 1)), 'yyyy-MM-dd');
+          endDate = format(endOfYear(new Date(year, 0, 1)), 'yyyy-MM-dd');
+        } else {
+          const month = parseInt(selectedMonth) - 1;
+          const date = new Date(year, month, 1);
+          startDate = format(startOfMonth(date), 'yyyy-MM-dd');
+          endDate = format(endOfMonth(date), 'yyyy-MM-dd');
+        }
+      }
+
+      const { data } = await supabase
+        .from('expenses')
+        .select('expense_details, amount')
+        .eq('user_id', user?.id)
+        .gte('date', startDate)
+        .lte('date', endDate);
+
+      const categoryMap: Record<string, number> = {};
+      data?.forEach(item => {
+        const category = item.expense_details?.trim() || 'Other';
+        categoryMap[category] = (categoryMap[category] || 0) + Number(item.amount);
+      });
+
+      return Object.entries(categoryMap)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value);
+    },
+    enabled: !!user?.id,
+  });
+
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
 
