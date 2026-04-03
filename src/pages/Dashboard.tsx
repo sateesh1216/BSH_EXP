@@ -327,7 +327,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-transparent">
       {/* Header */}
-      <header className="glass-effect border-b border-border/50 sticky top-0 z-50 backdrop-blur-md h-[65px]">
+      <header className="border-b border-border/40 sticky top-0 z-50 backdrop-blur-md bg-card/80 h-[65px]">
         <div className="px-4 sm:px-6 lg:px-8 h-full">
           <div className="flex justify-between items-center h-full">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -349,24 +349,24 @@ const Dashboard = () => {
                   />
                 </SheetContent>
               </Sheet>
-              <div className="p-1.5 sm:p-2 bg-gradient-primary rounded-lg sm:rounded-xl shadow-glow">
+              <div className="p-1.5 sm:p-2 bg-gradient-primary rounded-xl shadow-glow">
                 <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
               <div>
                 <h1 className="text-lg sm:text-xl font-bold text-gradient">BSH Accounts</h1>
-                <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Financial Management System</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Financial Management</p>
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
               <span className="text-sm text-muted-foreground hidden xl:block">
-                Welcome back, {user?.email?.split('@')[0]}
+                Welcome, <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
               </span>
               <ExportPdfReport selectedMonth={selectedMonth} selectedYear={selectedYear} />
-              <Button variant="outline" onClick={() => window.location.reload()} size="sm" className="hover-lift border-border/40 bg-card/50">
+              <Button variant="outline" onClick={() => window.location.reload()} size="sm" className="border-border/40 hover:bg-muted/60">
                 <RefreshCw className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Refresh</span>
               </Button>
-              <Button variant="outline" onClick={signOut} size="sm" className="hover-lift border-border/40 bg-card/50">
+              <Button variant="outline" onClick={signOut} size="sm" className="border-border/40 hover:bg-muted/60">
                 <LogOut className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Logout</span>
               </Button>
