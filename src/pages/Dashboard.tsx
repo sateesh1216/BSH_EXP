@@ -400,8 +400,10 @@ const Dashboard = () => {
 
             {/* Section Header - Desktop */}
             {currentMeta && (
-              <div className="hidden lg:flex items-center gap-3 pb-2 border-b border-border/40">
-                {SectionIcon && <SectionIcon className="h-5 w-5 text-primary" />}
+              <div className="hidden lg:flex items-center gap-3 pb-3">
+                <div className="p-2 rounded-xl bg-primary/10">
+                  {SectionIcon && <SectionIcon className="h-5 w-5 text-primary" />}
+                </div>
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">{currentMeta.label}</h2>
                   <p className="text-sm text-muted-foreground">{currentMeta.description}</p>
