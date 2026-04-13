@@ -29,8 +29,8 @@ const BottomNav = ({ activeSection, setActiveSection }: BottomNavProps) => {
   const { isAdmin } = useAuth();
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border safe-area-bottom">
-      <div className="flex items-center justify-around px-1 py-1.5">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/90 backdrop-blur-xl border-t border-border/50 safe-area-bottom shadow-lg">
+      <div className="flex items-center justify-around px-1 py-1">
         {primaryItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeSection === item.id;
@@ -39,14 +39,14 @@ const BottomNav = ({ activeSection, setActiveSection }: BottomNavProps) => {
               key={item.id}
               onClick={() => setActiveSection(item.id)}
               className={cn(
-                'flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all min-w-0 flex-1',
+                'flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl transition-all duration-200 ease-out min-w-0 flex-1 active:scale-95',
                 isActive
-                  ? 'text-primary bg-primary/10'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'text-primary bg-primary/10 shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground active:bg-muted/40'
               )}
             >
-              <Icon className={cn('h-5 w-5 shrink-0', isActive && 'scale-110')} />
-              <span className="text-[10px] font-medium truncate">{item.label}</span>
+              <Icon className={cn('h-5 w-5 shrink-0 transition-transform duration-200', isActive && 'scale-110')} />
+              <span className={cn("text-[10px] font-medium truncate transition-all duration-200", isActive && "font-semibold")}>{item.label}</span>
             </button>
           );
         })}

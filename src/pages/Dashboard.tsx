@@ -390,7 +390,7 @@ const Dashboard = () => {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 pb-20 lg:pb-0 overflow-auto">
+        <main className="flex-1 min-w-0 pb-20 lg:pb-0 overflow-auto scroll-smooth">
           <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
             {/* Reminders */}
             <UpcomingReminders />
@@ -400,8 +400,8 @@ const Dashboard = () => {
 
             {/* Section Header - Desktop */}
             {currentMeta && (
-              <div className="hidden lg:flex items-center gap-3 pb-3">
-                <div className="p-2 rounded-xl bg-primary/10">
+              <div className="hidden lg:flex items-center gap-3 pb-3 animate-fade-in">
+                <div className="p-2 rounded-xl bg-primary/10 transition-colors duration-300">
                   {SectionIcon && <SectionIcon className="h-5 w-5 text-primary" />}
                 </div>
                 <div>
@@ -412,7 +412,7 @@ const Dashboard = () => {
             )}
 
             {/* Dynamic Content */}
-            <div>{renderContent()}</div>
+            <div className="animate-fade-in">{renderContent()}</div>
           </div>
         </main>
       </div>
