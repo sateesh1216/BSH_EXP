@@ -173,6 +173,7 @@ All colors MUST be HSL. Gradients and shadows for professional appearance.
 
   html {
     @apply scroll-smooth;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -180,6 +181,13 @@ All colors MUST be HSL. Gradients and shadows for professional appearance.
     background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--surface-elevated)) 50%, hsl(var(--muted)) 100%);
     background-attachment: fixed;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Smooth transitions on all interactive elements */
+  button, a, input, select, textarea, [role="button"] {
+    @apply transition-all duration-200 ease-out;
   }
 }
 
@@ -200,15 +208,26 @@ All colors MUST be HSL. Gradients and shadows for professional appearance.
   
   /* Animated Elements */
   .animate-fade-in {
-    animation: fadeIn 0.6s ease-out;
+    animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   
   .animate-slide-up {
-    animation: slideUp 0.6s ease-out;
+    animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   
   .hover-lift {
-    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+    @apply transition-all duration-300 ease-out;
+    will-change: transform, box-shadow;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .hover-lift:active {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
   }
   
   /* Professional Input Styles */
@@ -224,23 +243,28 @@ All colors MUST be HSL. Gradients and shadows for professional appearance.
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(12px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(20px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 /* Typography Improvements */
