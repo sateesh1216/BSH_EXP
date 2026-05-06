@@ -295,6 +295,10 @@ const Dashboard = () => {
           <div className="space-y-6">
             <IncomeForm />
             <div className="flex flex-wrap items-center gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input placeholder="Search income..." value={incomeSearchTerm} onChange={(e) => setIncomeSearchTerm(e.target.value)} className="pl-10 w-[200px]" />
+              </div>
               <div className="flex items-center gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
@@ -335,8 +339,9 @@ const Dashboard = () => {
                   <span className="text-sm font-semibold text-income-green">{formatCurrency(dateRangeIncomeTotal)}</span>
                 </div>
               )}
+              {renderDownloadMenu('income', { searchTerm: incomeSearchTerm, startDate: incomeStartDate, endDate: incomeEndDate })}
             </div>
-            <EditableDataTable type="income" selectedMonth={selectedMonth} selectedYear={selectedYear} startDate={incomeStartDate} endDate={incomeEndDate} />
+            <EditableDataTable type="income" selectedMonth={selectedMonth} selectedYear={selectedYear} searchTerm={incomeSearchTerm} startDate={incomeStartDate} endDate={incomeEndDate} />
           </div>
         );
       case 'expenses':
