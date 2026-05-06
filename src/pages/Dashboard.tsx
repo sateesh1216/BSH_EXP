@@ -12,6 +12,8 @@ import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import * as XLSX from 'xlsx';
+import { useToast } from '@/hooks/use-toast';
 import Sidebar from '@/components/Dashboard/Sidebar';
 import MonthlySummaryCards from '@/components/Dashboard/MonthlySummaryCards';
 import IncomeForm from '@/components/Dashboard/IncomeForm';
@@ -143,6 +145,74 @@ const Dashboard = () => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
   };
 
+  const { toast } = useToast();
+  const [downloadingFiltered, setDownloadingFiltered] = useState(false);
+
+  const handleDownloadFilteredExpenses = async () => {
+    if (!user?.id) return;
+    setDownloadingFiltered(true);
+    try {
+      let start: string;
+      let end: string;
+      if (expenseStartDate || expenseEndDate) {
+        start = expenseStartDate ? format(expenseStartDate, 'yyyy-MM-dd') : '2020-01-01';
+        end = expenseEndDate ? format(expenseEndDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+      } else {
+        const r = getDateRange();
+        start = r.start;
+        end = r.end;
+      }
+
+      let query = supabase
+        .from('expenses')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('date', start)
+        .lte('date', end);
+
+      if (expenseSearchTerm.trim()) {
+        query = query.ilike('expense_details', `%${expenseSearchTerm.trim()}%`);
+      }
+
+      const { data, error } = await query.order('date', { ascending: false });
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        toast({ title: 'No results', description: 'No expenses match your filters.', variant: 'destructive' });
+        return;
+      }
+
+      const total = data.reduce((sum, e) => sum + Number(e.amount), 0);
+      const rows = data.map((item) => ({
+        Date: format(new Date(item.date), 'dd/MM/yyyy'),
+        'Expense Details': item.expense_details,
+        'Payment Mode': item.payment_mode,
+        Amount: Number(item.amount),
+      }));
+      rows.push({ Date: '', 'Expense Details': '', 'Payment Mode': 'TOTAL', Amount: total } as any);
+
+      const workbook = XLSX.utils.book_new();
+      const sheet = XLSX.utils.json_to_sheet(rows);
+      XLSX.utils.book_append_sheet(workbook, sheet, 'Filtered Expenses');
+
+      const parts: string[] = [];
+      if (expenseSearchTerm.trim()) parts.push(expenseSearchTerm.trim().replace(/[^a-z0-9]+/gi, '_'));
+      if (expenseStartDate || expenseEndDate) {
+        parts.push(`${start}_to_${end}`);
+      }
+      const suffix = parts.length ? parts.join('_') : 'all';
+      const filename = `Expenses_${suffix}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+      XLSX.writeFile(workbook, filename);
+
+      toast({ title: 'Download complete', description: `${data.length} expense(s) exported.` });
+    } catch (err: any) {
+      console.error(err);
+      toast({ title: 'Download failed', description: err.message || 'Could not export results.', variant: 'destructive' });
+    } finally {
+      setDownloadingFiltered(false);
+    }
+  };
+
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
@@ -252,6 +322,18 @@ const Dashboard = () => {
                   <span className="text-sm text-muted-foreground">Total:</span>
                   <span className="text-sm font-semibold text-expense-red">{formatCurrency(filteredExpensesTotal)}</span>
                 </div>
+              )}
+              {(expenseSearchTerm.trim() || expenseStartDate || expenseEndDate) && (
+                <Button
+                  onClick={handleDownloadFilteredExpenses}
+                  disabled={downloadingFiltered}
+                  variant="outline"
+                  size="sm"
+                  className="ml-auto gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  {downloadingFiltered ? 'Exporting...' : 'Download Results'}
+                </Button>
               )}
             </div>
             <EditableDataTable type="expenses" selectedMonth={selectedMonth} selectedYear={selectedYear} searchTerm={expenseSearchTerm} startDate={expenseStartDate} endDate={expenseEndDate} />
