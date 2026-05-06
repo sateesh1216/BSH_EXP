@@ -96,9 +96,12 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
         .gte('date', start)
         .lte('date', end);
 
-      // Add search filter for expenses
-      if (type === 'expenses' && searchTerm && searchTerm.trim()) {
-        query = query.ilike('expense_details', `%${searchTerm.trim()}%`);
+      // Add search filter per type
+      if (searchTerm && searchTerm.trim()) {
+        const term = `%${searchTerm.trim()}%`;
+        if (type === 'expenses') query = query.ilike('expense_details', term);
+        else if (type === 'income') query = query.ilike('source', term);
+        else if (type === 'savings') query = query.ilike('details', term);
       }
 
       const { data, error } = await query.order('date', { ascending: false });
