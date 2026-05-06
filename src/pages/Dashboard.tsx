@@ -409,6 +409,10 @@ const Dashboard = () => {
           <div className="space-y-6">
             <SavingsForm />
             <div className="flex flex-wrap items-center gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input placeholder="Search savings..." value={savingsSearchTerm} onChange={(e) => setSavingsSearchTerm(e.target.value)} className="pl-10 w-[200px]" />
+              </div>
               <div className="flex items-center gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
@@ -449,8 +453,9 @@ const Dashboard = () => {
                   <span className="text-sm font-semibold text-expense-blue">{formatCurrency(dateRangeSavingsTotal)}</span>
                 </div>
               )}
+              {renderDownloadMenu('savings', { searchTerm: savingsSearchTerm, startDate: savingsStartDate, endDate: savingsEndDate })}
             </div>
-            <EditableDataTable type="savings" selectedMonth={selectedMonth} selectedYear={selectedYear} startDate={savingsStartDate} endDate={savingsEndDate} />
+            <EditableDataTable type="savings" selectedMonth={selectedMonth} selectedYear={selectedYear} searchTerm={savingsSearchTerm} startDate={savingsStartDate} endDate={savingsEndDate} />
           </div>
         );
       case 'handloan':
