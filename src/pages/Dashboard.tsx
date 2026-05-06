@@ -153,15 +153,21 @@ const Dashboard = () => {
   const { toast } = useToast();
   const [downloadingFiltered, setDownloadingFiltered] = useState(false);
 
-  const handleDownloadFilteredExpenses = async () => {
+  type DownloadType = 'income' | 'expenses' | 'savings';
+
+  const handleDownloadFiltered = async (
+    type: DownloadType,
+    fileFormat: 'xlsx' | 'pdf',
+    opts: { searchTerm: string; startDate?: Date; endDate?: Date }
+  ) => {
     if (!user?.id) return;
     setDownloadingFiltered(true);
     try {
       let start: string;
       let end: string;
-      if (expenseStartDate || expenseEndDate) {
-        start = expenseStartDate ? format(expenseStartDate, 'yyyy-MM-dd') : '2020-01-01';
-        end = expenseEndDate ? format(expenseEndDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+      if (opts.startDate || opts.endDate) {
+        start = opts.startDate ? format(opts.startDate, 'yyyy-MM-dd') : '2020-01-01';
+        end = opts.endDate ? format(opts.endDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
       } else {
         const r = getDateRange();
         start = r.start;
@@ -169,53 +175,113 @@ const Dashboard = () => {
       }
 
       let query = supabase
-        .from('expenses')
+        .from(type)
         .select('*')
         .eq('user_id', user.id)
         .gte('date', start)
         .lte('date', end);
 
-      if (expenseSearchTerm.trim()) {
-        query = query.ilike('expense_details', `%${expenseSearchTerm.trim()}%`);
+      const term = opts.searchTerm.trim();
+      if (term) {
+        if (type === 'expenses') query = query.ilike('expense_details', `%${term}%`);
+        else if (type === 'income') query = query.ilike('source', `%${term}%`);
+        else if (type === 'savings') query = query.ilike('details', `%${term}%`);
       }
 
       const { data, error } = await query.order('date', { ascending: false });
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        toast({ title: 'No results', description: 'No expenses match your filters.', variant: 'destructive' });
+        toast({ title: 'No results', description: `No ${type} match your filters.`, variant: 'destructive' });
         return;
       }
 
-      const total = data.reduce((sum, e) => sum + Number(e.amount), 0);
-      const rows = data.map((item) => ({
-        Date: format(new Date(item.date), 'dd/MM/yyyy'),
-        'Expense Details': item.expense_details,
-        'Payment Mode': item.payment_mode,
-        Amount: Number(item.amount),
-      }));
-      rows.push({ Date: '', 'Expense Details': '', 'Payment Mode': 'TOTAL', Amount: total } as any);
+      const total = data.reduce((sum: number, e: any) => sum + Number(e.amount), 0);
 
-      const workbook = XLSX.utils.book_new();
-      const sheet = XLSX.utils.json_to_sheet(rows);
-      XLSX.utils.book_append_sheet(workbook, sheet, 'Filtered Expenses');
+      // Define columns per type
+      let headers: string[];
+      let rows: (string | number)[][];
+      if (type === 'expenses') {
+        headers = ['Date', 'Expense Details', 'Payment Mode', 'Amount'];
+        rows = data.map((i: any) => [format(new Date(i.date), 'dd/MM/yyyy'), i.expense_details, i.payment_mode, Number(i.amount)]);
+      } else if (type === 'income') {
+        headers = ['Date', 'Source', 'Amount'];
+        rows = data.map((i: any) => [format(new Date(i.date), 'dd/MM/yyyy'), i.source, Number(i.amount)]);
+      } else {
+        headers = ['Date', 'Details', 'Amount'];
+        rows = data.map((i: any) => [format(new Date(i.date), 'dd/MM/yyyy'), i.details, Number(i.amount)]);
+      }
 
       const parts: string[] = [];
-      if (expenseSearchTerm.trim()) parts.push(expenseSearchTerm.trim().replace(/[^a-z0-9]+/gi, '_'));
-      if (expenseStartDate || expenseEndDate) {
-        parts.push(`${start}_to_${end}`);
-      }
+      if (term) parts.push(term.replace(/[^a-z0-9]+/gi, '_'));
+      if (opts.startDate || opts.endDate) parts.push(`${start}_to_${end}`);
       const suffix = parts.length ? parts.join('_') : 'all';
-      const filename = `Expenses_${suffix}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
-      XLSX.writeFile(workbook, filename);
+      const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+      const baseFilename = `${typeLabel}_${suffix}_${format(new Date(), 'yyyy-MM-dd')}`;
 
-      toast({ title: 'Download complete', description: `${data.length} expense(s) exported.` });
+      if (fileFormat === 'xlsx') {
+        const objectRows = rows.map((r) => Object.fromEntries(headers.map((h, idx) => [h, r[idx]])));
+        const totalRow: any = Object.fromEntries(headers.map((h) => [h, '']));
+        totalRow[headers[headers.length - 2]] = 'TOTAL';
+        totalRow[headers[headers.length - 1]] = total;
+        objectRows.push(totalRow);
+        const workbook = XLSX.utils.book_new();
+        const sheet = XLSX.utils.json_to_sheet(objectRows);
+        XLSX.utils.book_append_sheet(workbook, sheet, `Filtered ${typeLabel}`);
+        XLSX.writeFile(workbook, `${baseFilename}.xlsx`);
+      } else {
+        const doc = new jsPDF();
+        doc.setFontSize(16);
+        doc.text(`${typeLabel} Report`, 14, 18);
+        doc.setFontSize(10);
+        const filterDesc: string[] = [];
+        if (term) filterDesc.push(`Search: "${term}"`);
+        filterDesc.push(`Range: ${start} to ${end}`);
+        doc.text(filterDesc.join('  |  '), 14, 26);
+        autoTable(doc, {
+          head: [headers],
+          body: rows.map((r) => r.map((c, idx) => (idx === r.length - 1 ? formatCurrency(Number(c)) : String(c)))),
+          startY: 32,
+          styles: { fontSize: 9 },
+          headStyles: { fillColor: [37, 99, 235] },
+          foot: [headers.map((_, idx) =>
+            idx === headers.length - 2 ? 'TOTAL' : idx === headers.length - 1 ? formatCurrency(total) : ''
+          )],
+          footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: 'bold' },
+        });
+        doc.save(`${baseFilename}.pdf`);
+      }
+
+      toast({ title: 'Download complete', description: `${data.length} ${type} record(s) exported.` });
     } catch (err: any) {
       console.error(err);
       toast({ title: 'Download failed', description: err.message || 'Could not export results.', variant: 'destructive' });
     } finally {
       setDownloadingFiltered(false);
     }
+  };
+
+  const renderDownloadMenu = (type: DownloadType, opts: { searchTerm: string; startDate?: Date; endDate?: Date }) => {
+    const active = !!opts.searchTerm.trim() || !!opts.startDate || !!opts.endDate;
+    if (!active) return null;
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button disabled={downloadingFiltered} variant="outline" size="sm" className="ml-auto gap-2">
+            <Download className="h-4 w-4" />
+            {downloadingFiltered ? 'Exporting...' : 'Download Results'}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => handleDownloadFiltered(type, 'pdf', opts)}>
+            Download as PDF
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleDownloadFiltered(type, 'xlsx', opts)}>
+            Download as Excel
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   };
 
   if (!user) {
