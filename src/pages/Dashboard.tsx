@@ -56,8 +56,10 @@ const Dashboard = () => {
   
   const [incomeStartDate, setIncomeStartDate] = useState<Date | undefined>(undefined);
   const [incomeEndDate, setIncomeEndDate] = useState<Date | undefined>(undefined);
+  const [incomeSearchTerm, setIncomeSearchTerm] = useState('');
   const [savingsStartDate, setSavingsStartDate] = useState<Date | undefined>(undefined);
   const [savingsEndDate, setSavingsEndDate] = useState<Date | undefined>(undefined);
+  const [savingsSearchTerm, setSavingsSearchTerm] = useState('');
 
   // Keyboard shortcuts: Alt+1 (Income), Alt+2 (Expenses), Alt+3 (Savings), Alt+4 (Reports)
   useKeyboardNavigation(setActiveSection);
