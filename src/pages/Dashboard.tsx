@@ -399,18 +399,7 @@ const Dashboard = () => {
                   <span className="text-sm font-semibold text-expense-red">{formatCurrency(filteredExpensesTotal)}</span>
                 </div>
               )}
-              {(expenseSearchTerm.trim() || expenseStartDate || expenseEndDate) && (
-                <Button
-                  onClick={handleDownloadFilteredExpenses}
-                  disabled={downloadingFiltered}
-                  variant="outline"
-                  size="sm"
-                  className="ml-auto gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  {downloadingFiltered ? 'Exporting...' : 'Download Results'}
-                </Button>
-              )}
+              {renderDownloadMenu('expenses', { searchTerm: expenseSearchTerm, startDate: expenseStartDate, endDate: expenseEndDate })}
             </div>
             <EditableDataTable type="expenses" selectedMonth={selectedMonth} selectedYear={selectedYear} searchTerm={expenseSearchTerm} startDate={expenseStartDate} endDate={expenseEndDate} />
           </div>
