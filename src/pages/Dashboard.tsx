@@ -308,8 +308,8 @@ const Dashboard = () => {
             fillColor: [37, 99, 235],
             textColor: [255, 255, 255],
             fontStyle: 'bold',
-            halign: idx => 'right',
-          } as any,
+            halign: 'right',
+          },
           didDrawPage: () => {
             const str = `Page ${doc.getNumberOfPages()}`;
             doc.setFontSize(8);
