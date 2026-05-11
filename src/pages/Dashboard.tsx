@@ -230,92 +230,171 @@ const Dashboard = () => {
         XLSX.utils.book_append_sheet(workbook, sheet, `Filtered ${typeLabel}`);
         XLSX.writeFile(workbook, `${baseFilename}.xlsx`);
       } else {
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        // PDF-safe currency: jsPDF's built-in fonts don't render the ₹ glyph
+        // (renders as a black box). Use "Rs." with Indian digit grouping.
+        const pdfCurrency = (n: number) => {
+          const sign = n < 0 ? '-' : '';
+          const formatted = new Intl.NumberFormat('en-IN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }).format(Math.abs(n));
+          return `${sign}Rs. ${formatted}`;
+        };
+
+        const isWide = type === 'expenses';
+        const doc = new jsPDF({
+          orientation: isWide ? 'landscape' : 'portrait',
+          unit: 'mm',
+          format: 'a4',
+        });
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
         const marginX = 14;
 
+        // Brand palette
+        const BRAND: [number, number, number] = [15, 23, 42];      // slate-900
+        const ACCENT: [number, number, number] = [37, 99, 235];    // blue-600
+        const SOFT: [number, number, number] = [241, 245, 249];    // slate-100
+        const INK: [number, number, number] = [30, 41, 59];        // slate-800
+        const MUTED: [number, number, number] = [100, 116, 139];   // slate-500
+
         // Header band
-        doc.setFillColor(37, 99, 235);
-        doc.rect(0, 0, pageWidth, 22, 'F');
+        doc.setFillColor(...BRAND);
+        doc.rect(0, 0, pageWidth, 26, 'F');
+        doc.setFillColor(...ACCENT);
+        doc.rect(0, 26, pageWidth, 1.2, 'F');
+
         doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(16);
-        doc.text(`${typeLabel} Report`, marginX, 14);
+        doc.setFontSize(18);
+        doc.text('BSH Accounts', marginX, 13);
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        doc.text(`BSH Accounts  |  Generated ${format(new Date(), 'dd MMM yyyy, HH:mm')}`, pageWidth - marginX, 14, { align: 'right' });
-
-        // Filter / summary card
-        doc.setTextColor(30, 41, 59);
         doc.setFontSize(10);
-        let cursorY = 30;
-        const filterLines: string[] = [];
-        if (term) filterLines.push(`Search: "${term}"`);
-        filterLines.push(`Date range: ${format(new Date(start), 'dd MMM yyyy')} - ${format(new Date(end), 'dd MMM yyyy')}`);
-        filterLines.push(`Records: ${data.length}   Total: ${formatCurrency(total)}`);
-        doc.setFillColor(241, 245, 249);
-        doc.roundedRect(marginX, cursorY - 5, pageWidth - marginX * 2, filterLines.length * 5 + 4, 2, 2, 'F');
-        filterLines.forEach((l, i) => doc.text(l, marginX + 3, cursorY + i * 5));
-        const tableStartY = cursorY + filterLines.length * 5 + 4;
+        doc.text(`${typeLabel} Report`, marginX, 20);
+        doc.setFontSize(9);
+        doc.text(
+          `Generated ${format(new Date(), 'dd MMM yyyy, HH:mm')}`,
+          pageWidth - marginX,
+          20,
+          { align: 'right' }
+        );
+
+        // Summary cards row
+        const cardY = 34;
+        const cardH = 18;
+        const gap = 4;
+        const cardCount = term ? 3 : 2;
+        const cardW = (pageWidth - marginX * 2 - gap * (cardCount - 1)) / cardCount;
+
+        const drawCard = (i: number, label: string, value: string, valueColor: [number, number, number] = ACCENT) => {
+          const x = marginX + i * (cardW + gap);
+          doc.setFillColor(...SOFT);
+          doc.roundedRect(x, cardY, cardW, cardH, 2, 2, 'F');
+          doc.setFontSize(8);
+          doc.setTextColor(...MUTED);
+          doc.setFont('helvetica', 'normal');
+          doc.text(label.toUpperCase(), x + 4, cardY + 6);
+          doc.setFontSize(12);
+          doc.setTextColor(...valueColor);
+          doc.setFont('helvetica', 'bold');
+          doc.text(value, x + 4, cardY + 14);
+        };
+
+        let ci = 0;
+        drawCard(ci++, 'Date Range', `${format(new Date(start), 'dd MMM yyyy')} - ${format(new Date(end), 'dd MMM yyyy')}`, INK);
+        drawCard(ci++, 'Records', String(data.length), INK);
+        if (term) drawCard(ci++, 'Search', `"${term}"`, INK);
+
+        // Total banner
+        const bannerY = cardY + cardH + 4;
+        const bannerH = 12;
+        doc.setFillColor(...ACCENT);
+        doc.roundedRect(marginX, bannerY, pageWidth - marginX * 2, bannerH, 2, 2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text(`Total ${typeLabel}`, marginX + 4, bannerY + 8);
+        doc.setFontSize(13);
+        doc.text(pdfCurrency(total), pageWidth - marginX - 4, bannerY + 8.2, { align: 'right' });
+
+        const tableStartY = bannerY + bannerH + 5;
 
         // Column widths
         const usable = pageWidth - marginX * 2;
         let columnStyles: Record<number, any> = {};
         if (type === 'expenses') {
+          const dateW = 26;
+          const modeW = 32;
+          const amtW = 38;
           columnStyles = {
-            0: { cellWidth: 24, halign: 'left' },
-            1: { cellWidth: usable - 24 - 32 - 32, halign: 'left' },
-            2: { cellWidth: 32, halign: 'center' },
-            3: { cellWidth: 32, halign: 'right' },
+            0: { cellWidth: dateW, halign: 'left' },
+            1: { cellWidth: usable - dateW - modeW - amtW, halign: 'left' },
+            2: { cellWidth: modeW, halign: 'center' },
+            3: { cellWidth: amtW, halign: 'right', font: 'helvetica', fontStyle: 'bold' },
           };
         } else {
+          const dateW = 30;
+          const amtW = 42;
           columnStyles = {
-            0: { cellWidth: 28, halign: 'left' },
-            1: { cellWidth: usable - 28 - 36, halign: 'left' },
-            2: { cellWidth: 36, halign: 'right' },
+            0: { cellWidth: dateW, halign: 'left' },
+            1: { cellWidth: usable - dateW - amtW, halign: 'left' },
+            2: { cellWidth: amtW, halign: 'right', fontStyle: 'bold' },
           };
         }
 
         autoTable(doc, {
           head: [headers],
           body: rows.map((r) =>
-            r.map((c, idx) => (idx === r.length - 1 ? formatCurrency(Number(c)) : String(c ?? '')))
+            r.map((c, idx) => (idx === r.length - 1 ? pdfCurrency(Number(c)) : String(c ?? '')))
           ),
           startY: tableStartY,
-          margin: { left: marginX, right: marginX, bottom: 18 },
+          margin: { left: marginX, right: marginX, bottom: 16 },
+          tableLineColor: [226, 232, 240],
+          tableLineWidth: 0.1,
           styles: {
             fontSize: 9,
-            cellPadding: 2.5,
+            cellPadding: { top: 3, right: 3, bottom: 3, left: 3 },
             overflow: 'linebreak',
             valign: 'middle',
+            textColor: INK,
             lineColor: [226, 232, 240],
             lineWidth: 0.1,
           },
           headStyles: {
-            fillColor: [37, 99, 235],
+            fillColor: BRAND,
             textColor: [255, 255, 255],
             fontStyle: 'bold',
             halign: 'left',
-            cellPadding: 3,
+            cellPadding: 3.5,
+            fontSize: 9.5,
           },
           alternateRowStyles: { fillColor: [248, 250, 252] },
           columnStyles,
           foot: [headers.map((_, idx) =>
-            idx === headers.length - 2 ? 'TOTAL' : idx === headers.length - 1 ? formatCurrency(total) : ''
+            idx === headers.length - 2
+              ? 'TOTAL'
+              : idx === headers.length - 1
+                ? pdfCurrency(total)
+                : ''
           )],
           footStyles: {
-            fillColor: [37, 99, 235],
+            fillColor: ACCENT,
             textColor: [255, 255, 255],
             fontStyle: 'bold',
             halign: 'right',
+            fontSize: 10,
+            cellPadding: 3.5,
           },
           didDrawPage: () => {
-            const str = `Page ${doc.getNumberOfPages()}`;
             doc.setFontSize(8);
-            doc.setTextColor(100, 116, 139);
+            doc.setTextColor(...MUTED);
             doc.text('BSH Accounts - Confidential', marginX, pageHeight - 8);
-            doc.text(str, pageWidth - marginX, pageHeight - 8, { align: 'right' });
+            doc.text(
+              `Page ${doc.getNumberOfPages()}`,
+              pageWidth - marginX,
+              pageHeight - 8,
+              { align: 'right' }
+            );
           },
         });
         doc.save(`${baseFilename}.pdf`);
