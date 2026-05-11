@@ -38,8 +38,16 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
     };
   };
 
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
+  // PDF-safe currency: jsPDF's built-in fonts don't render ₹ (renders as black box).
+  // Use "Rs." with Indian digit grouping for clear, legible amounts.
+  const formatCurrency = (amount: number) => {
+    const sign = amount < 0 ? '-' : '';
+    const formatted = new Intl.NumberFormat('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Math.abs(amount));
+    return `${sign}Rs. ${formatted}`;
+  };
 
   const handleExport = async () => {
     if (!user) return;
