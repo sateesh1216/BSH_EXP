@@ -279,43 +279,53 @@ const Dashboard = () => {
           { align: 'right' }
         );
 
-        // Summary cards row
-        const cardY = 34;
-        const cardH = 18;
-        const gap = 4;
-        const cardCount = term ? 3 : 2;
-        const cardW = (pageWidth - marginX * 2 - gap * (cardCount - 1)) / cardCount;
+        // Filter summary section — stronger typography, clearer hierarchy
+        const summaryY = 34;
+        const summaryTitleY = summaryY;
+        doc.setTextColor(...INK);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.text('Filter Summary', marginX, summaryTitleY);
 
-        const drawCard = (i: number, label: string, value: string, valueColor: [number, number, number] = ACCENT) => {
-          const x = marginX + i * (cardW + gap);
-          doc.setFillColor(...SOFT);
-          doc.roundedRect(x, cardY, cardW, cardH, 2, 2, 'F');
-          doc.setFontSize(8);
+        // Horizontal rule under title
+        doc.setDrawColor(...ACCENT);
+        doc.setLineWidth(0.6);
+        doc.line(marginX, summaryTitleY + 2, marginX + 48, summaryTitleY + 2);
+
+        const row1Y = summaryTitleY + 10;
+        const row2Y = row1Y + 10;
+        const col1X = marginX;
+        const col2X = marginX + (pageWidth - marginX * 2) * 0.38;
+        const col3X = marginX + (pageWidth - marginX * 2) * 0.72;
+
+        const drawSummaryItem = (x: number, y: number, label: string, value: string) => {
+          doc.setFontSize(8.5);
           doc.setTextColor(...MUTED);
           doc.setFont('helvetica', 'normal');
-          doc.text(label.toUpperCase(), x + 4, cardY + 6);
-          doc.setFontSize(12);
-          doc.setTextColor(...valueColor);
+          doc.text(label, x, y);
+          doc.setFontSize(11);
+          doc.setTextColor(...INK);
           doc.setFont('helvetica', 'bold');
-          doc.text(value, x + 4, cardY + 14);
+          doc.text(value, x, y + 5.5);
         };
 
-        let ci = 0;
-        drawCard(ci++, 'Date Range', `${format(new Date(start), 'dd MMM yyyy')} - ${format(new Date(end), 'dd MMM yyyy')}`, INK);
-        drawCard(ci++, 'Records', String(data.length), INK);
-        if (term) drawCard(ci++, 'Search', `"${term}"`, INK);
+        drawSummaryItem(col1X, row1Y, 'DATE RANGE', `${format(new Date(start), 'dd MMM yyyy')}  –  ${format(new Date(end), 'dd MMM yyyy')}`);
+        drawSummaryItem(col2X, row1Y, 'RECORDS', `${data.length} ${typeLabel}`);
+        if (term) {
+          drawSummaryItem(col3X, row1Y, 'SEARCH TERM', `"${term}"`);
+        }
 
-        // Total banner
-        const bannerY = cardY + cardH + 4;
-        const bannerH = 12;
+        // Total banner — bolder, full-width
+        const bannerY = term ? row2Y + 6 : row1Y + 14;
+        const bannerH = 14;
         doc.setFillColor(...ACCENT);
         doc.roundedRect(marginX, bannerY, pageWidth - marginX * 2, bannerH, 2, 2, 'F');
         doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.text(`Total ${typeLabel}`, marginX + 4, bannerY + 8);
-        doc.setFontSize(13);
-        doc.text(pdfCurrency(total), pageWidth - marginX - 4, bannerY + 8.2, { align: 'right' });
+        doc.setFontSize(11);
+        doc.text(`Total ${typeLabel}`, marginX + 6, bannerY + 9);
+        doc.setFontSize(14);
+        doc.text(pdfCurrency(total), pageWidth - marginX - 6, bannerY + 9, { align: 'right' });
 
         const tableStartY = bannerY + bannerH + 5;
 
