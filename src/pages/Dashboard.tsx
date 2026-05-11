@@ -230,24 +230,93 @@ const Dashboard = () => {
         XLSX.utils.book_append_sheet(workbook, sheet, `Filtered ${typeLabel}`);
         XLSX.writeFile(workbook, `${baseFilename}.xlsx`);
       } else {
-        const doc = new jsPDF();
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const marginX = 14;
+
+        // Header band
+        doc.setFillColor(37, 99, 235);
+        doc.rect(0, 0, pageWidth, 22, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
         doc.setFontSize(16);
-        doc.text(`${typeLabel} Report`, 14, 18);
+        doc.text(`${typeLabel} Report`, marginX, 14);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.text(`BSH Accounts  |  Generated ${format(new Date(), 'dd MMM yyyy, HH:mm')}`, pageWidth - marginX, 14, { align: 'right' });
+
+        // Filter / summary card
+        doc.setTextColor(30, 41, 59);
         doc.setFontSize(10);
-        const filterDesc: string[] = [];
-        if (term) filterDesc.push(`Search: "${term}"`);
-        filterDesc.push(`Range: ${start} to ${end}`);
-        doc.text(filterDesc.join('  |  '), 14, 26);
+        let cursorY = 30;
+        const filterLines: string[] = [];
+        if (term) filterLines.push(`Search: "${term}"`);
+        filterLines.push(`Date range: ${format(new Date(start), 'dd MMM yyyy')} - ${format(new Date(end), 'dd MMM yyyy')}`);
+        filterLines.push(`Records: ${data.length}   Total: ${formatCurrency(total)}`);
+        doc.setFillColor(241, 245, 249);
+        doc.roundedRect(marginX, cursorY - 5, pageWidth - marginX * 2, filterLines.length * 5 + 4, 2, 2, 'F');
+        filterLines.forEach((l, i) => doc.text(l, marginX + 3, cursorY + i * 5));
+        const tableStartY = cursorY + filterLines.length * 5 + 4;
+
+        // Column widths
+        const usable = pageWidth - marginX * 2;
+        let columnStyles: Record<number, any> = {};
+        if (type === 'expenses') {
+          columnStyles = {
+            0: { cellWidth: 24, halign: 'left' },
+            1: { cellWidth: usable - 24 - 32 - 32, halign: 'left' },
+            2: { cellWidth: 32, halign: 'center' },
+            3: { cellWidth: 32, halign: 'right' },
+          };
+        } else {
+          columnStyles = {
+            0: { cellWidth: 28, halign: 'left' },
+            1: { cellWidth: usable - 28 - 36, halign: 'left' },
+            2: { cellWidth: 36, halign: 'right' },
+          };
+        }
+
         autoTable(doc, {
           head: [headers],
-          body: rows.map((r) => r.map((c, idx) => (idx === r.length - 1 ? formatCurrency(Number(c)) : String(c)))),
-          startY: 32,
-          styles: { fontSize: 9 },
-          headStyles: { fillColor: [37, 99, 235] },
+          body: rows.map((r) =>
+            r.map((c, idx) => (idx === r.length - 1 ? formatCurrency(Number(c)) : String(c ?? '')))
+          ),
+          startY: tableStartY,
+          margin: { left: marginX, right: marginX, bottom: 18 },
+          styles: {
+            fontSize: 9,
+            cellPadding: 2.5,
+            overflow: 'linebreak',
+            valign: 'middle',
+            lineColor: [226, 232, 240],
+            lineWidth: 0.1,
+          },
+          headStyles: {
+            fillColor: [37, 99, 235],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            halign: 'left',
+            cellPadding: 3,
+          },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+          columnStyles,
           foot: [headers.map((_, idx) =>
             idx === headers.length - 2 ? 'TOTAL' : idx === headers.length - 1 ? formatCurrency(total) : ''
           )],
-          footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: 'bold' },
+          footStyles: {
+            fillColor: [37, 99, 235],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            halign: idx => 'right',
+          } as any,
+          didDrawPage: () => {
+            const str = `Page ${doc.getNumberOfPages()}`;
+            doc.setFontSize(8);
+            doc.setTextColor(100, 116, 139);
+            doc.text('BSH Accounts - Confidential', marginX, pageHeight - 8);
+            doc.text(str, pageWidth - marginX, pageHeight - 8, { align: 'right' });
+          },
         });
         doc.save(`${baseFilename}.pdf`);
       }
