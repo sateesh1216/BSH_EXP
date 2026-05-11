@@ -38,8 +38,16 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
     };
   };
 
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
+  // PDF-safe currency: jsPDF's built-in fonts don't render ₹ (renders as black box).
+  // Use "Rs." with Indian digit grouping for clear, legible amounts.
+  const formatCurrency = (amount: number) => {
+    const sign = amount < 0 ? '-' : '';
+    const formatted = new Intl.NumberFormat('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Math.abs(amount));
+    return `${sign}Rs. ${formatted}`;
+  };
 
   const handleExport = async () => {
     if (!user) return;
@@ -106,13 +114,20 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
       doc.text('BSH Accounts', marginLeft, 16);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Financial Report  —  ${label}`, marginLeft, 26);
+      // ── Header ──
+      doc.setFillColor(15, 23, 42); // slate-900
+      doc.rect(0, 0, pageWidth, 38, 'F');
+      doc.setFillColor(37, 99, 235); // accent strip
+      doc.rect(0, 38, pageWidth, 1.5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(22);
+      doc.setFont('helvetica', 'bold');
+      doc.text('BSH Accounts', marginLeft, 16);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Financial Report  -  ${label}`, marginLeft, 26);
       doc.setFontSize(9);
       doc.text(`Generated: ${format(new Date(), 'dd MMM yyyy, hh:mm a')}`, pageWidth - marginRight, 26, { align: 'right' });
-
-      // Thin accent line
-      doc.setFillColor(30, 64, 175);
-      doc.rect(0, 38, pageWidth, 1.5, 'F');
 
       // ── Summary Cards ──
       let y = 50;
