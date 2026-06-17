@@ -265,72 +265,137 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
         y = (doc as any).lastAutoTable.finalY + 14;
       };
 
-      // ── Income ──
-      addSection(
-        'Income Details',
-        [34, 197, 94],
-        ['#', 'Date', 'Source', 'Amount'],
-        incomeData.map((i, idx) => [
-          String(idx + 1),
-          format(new Date(i.date), 'dd MMM yyyy'),
-          i.source,
-          formatCurrency(Number(i.amount)),
-        ]),
-        [3],
-        { 0: { cellWidth: 10 }, 1: { cellWidth: 28 } },
-      );
+      // Group data by month-year key when "all months" selected, otherwise single group.
+      const groupByMonth = selectedMonth === 'all';
 
-      // ── Expenses ──
-      addSection(
-        'Expense Details',
-        [239, 68, 68],
-        ['#', 'Date', 'Details', 'Payment Mode', 'Amount'],
-        expenseData.map((e, idx) => [
-          String(idx + 1),
-          format(new Date(e.date), 'dd MMM yyyy'),
-          e.expense_details,
-          e.payment_mode,
-          formatCurrency(Number(e.amount)),
-        ]),
-        [4],
-        { 0: { cellWidth: 10 }, 1: { cellWidth: 28 }, 3: { cellWidth: 28 } },
-      );
+      type Group = {
+        key: string;
+        label: string;
+        income: typeof incomeData;
+        expenses: typeof expenseData;
+        savings: typeof savingsData;
+        loans: typeof loansData;
+      };
 
-      // ── Savings ──
-      addSection(
-        'Savings Details',
-        [59, 130, 246],
-        ['#', 'Date', 'Details', 'Amount'],
-        savingsData.map((s, idx) => [
-          String(idx + 1),
-          format(new Date(s.date), 'dd MMM yyyy'),
-          s.details,
-          formatCurrency(Number(s.amount)),
-        ]),
-        [3],
-        { 0: { cellWidth: 10 }, 1: { cellWidth: 28 } },
-      );
+      const buildGroups = (): Group[] => {
+        if (!groupByMonth) {
+          return [{
+            key: 'all',
+            label,
+            income: incomeData,
+            expenses: expenseData,
+            savings: savingsData,
+            loans: loansData,
+          }];
+        }
+        const map = new Map<string, Group>();
+        const ensure = (date: string): Group => {
+          const d = new Date(date);
+          const key = format(d, 'yyyy-MM');
+          if (!map.has(key)) {
+            map.set(key, {
+              key,
+              label: format(d, 'MMMM yyyy'),
+              income: [], expenses: [], savings: [], loans: [],
+            });
+          }
+          return map.get(key)!;
+        };
+        incomeData.forEach(r => ensure(r.date).income.push(r));
+        expenseData.forEach(r => ensure(r.date).expenses.push(r));
+        savingsData.forEach(r => ensure(r.date).savings.push(r));
+        loansData.forEach(r => ensure(r.date).loans.push(r));
+        return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
+      };
 
-      // ── Hand Loans ──
-      if (loansData.length > 0) {
+      const groups = buildGroups();
+
+      const renderMonthHeader = (groupLabel: string) => {
+        doc.setFillColor(15, 23, 42);
+        doc.rect(marginLeft, y - 5, contentWidth, 10, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(groupLabel, marginLeft + 4, y + 2);
+        y += 12;
+        doc.setTextColor(30, 30, 30);
+      };
+
+      groups.forEach((g, gIdx) => {
+        if (groupByMonth) {
+          if (gIdx > 0) {
+            doc.addPage();
+            y = 20;
+          } else {
+            y = ensureSpace(y, 20);
+          }
+          renderMonthHeader(g.label);
+        }
+
         addSection(
-          'Hand Loan Details',
-          [249, 115, 22],
-          ['#', 'Date', 'Borrower', 'Amount', 'Repaid', 'Remaining', 'Interest', 'Status'],
-          loansData.map((loan, idx) => [
+          'Income Details',
+          [34, 197, 94],
+          ['#', 'Date', 'Source', 'Amount'],
+          g.income.map((i, idx) => [
             String(idx + 1),
-            format(new Date(loan.date), 'dd MMM yyyy'),
-            loan.borrower_name,
-            formatCurrency(Number(loan.amount)),
-            formatCurrency(getRepaidTotal(loan.id)),
-            formatCurrency(getRemaining(loan)),
-            formatCurrency(Math.round(calcInterest(loan) * 100) / 100),
-            loan.status,
+            format(new Date(i.date), 'dd MMM yyyy'),
+            i.source,
+            formatCurrency(Number(i.amount)),
           ]),
-          [3, 4, 5, 6],
-          { 0: { cellWidth: 8 }, 1: { cellWidth: 24 }, 7: { cellWidth: 20, halign: 'center' } },
+          [3],
+          { 0: { cellWidth: 10 }, 1: { cellWidth: 28 } },
         );
-      }
+
+        addSection(
+          'Expense Details',
+          [239, 68, 68],
+          ['#', 'Date', 'Details', 'Payment Mode', 'Amount'],
+          g.expenses.map((e, idx) => [
+            String(idx + 1),
+            format(new Date(e.date), 'dd MMM yyyy'),
+            e.expense_details,
+            e.payment_mode,
+            formatCurrency(Number(e.amount)),
+          ]),
+          [4],
+          { 0: { cellWidth: 10 }, 1: { cellWidth: 28 }, 3: { cellWidth: 28 } },
+        );
+
+        addSection(
+          'Savings Details',
+          [59, 130, 246],
+          ['#', 'Date', 'Details', 'Amount'],
+          g.savings.map((s, idx) => [
+            String(idx + 1),
+            format(new Date(s.date), 'dd MMM yyyy'),
+            s.details,
+            formatCurrency(Number(s.amount)),
+          ]),
+          [3],
+          { 0: { cellWidth: 10 }, 1: { cellWidth: 28 } },
+        );
+
+        if (g.loans.length > 0) {
+          addSection(
+            'Hand Loan Details',
+            [249, 115, 22],
+            ['#', 'Date', 'Borrower', 'Amount', 'Repaid', 'Remaining', 'Interest', 'Status'],
+            g.loans.map((loan, idx) => [
+              String(idx + 1),
+              format(new Date(loan.date), 'dd MMM yyyy'),
+              loan.borrower_name,
+              formatCurrency(Number(loan.amount)),
+              formatCurrency(getRepaidTotal(loan.id)),
+              formatCurrency(getRemaining(loan)),
+              formatCurrency(Math.round(calcInterest(loan) * 100) / 100),
+              loan.status,
+            ]),
+            [3, 4, 5, 6],
+            { 0: { cellWidth: 8 }, 1: { cellWidth: 24 }, 7: { cellWidth: 20, halign: 'center' } },
+          );
+        }
+      });
+
 
       // ── Footer on each page ──
       const totalPages = doc.getNumberOfPages();
