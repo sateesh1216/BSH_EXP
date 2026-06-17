@@ -129,12 +129,51 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
       doc.setFontSize(9);
       doc.text(`Generated: ${format(new Date(), 'dd MMM yyyy, hh:mm a')}`, pageWidth - marginRight, 26, { align: 'right' });
 
-      // ── Summary Cards ──
+      // ── Build month groups early (needed for monthly cards + TOC) ──
+      const groupByMonth = selectedMonth === 'all';
+
+      type Group = {
+        key: string;
+        label: string;
+        income: typeof incomeData;
+        expenses: typeof expenseData;
+        savings: typeof savingsData;
+        loans: typeof loansData;
+        startPage?: number;
+      };
+
+      const buildGroups = (): Group[] => {
+        if (!groupByMonth) {
+          return [{
+            key: 'all', label,
+            income: incomeData, expenses: expenseData, savings: savingsData, loans: loansData,
+          }];
+        }
+        const map = new Map<string, Group>();
+        const ensure = (date: string): Group => {
+          const d = new Date(date);
+          const key = format(d, 'yyyy-MM');
+          if (!map.has(key)) {
+            map.set(key, { key, label: format(d, 'MMMM yyyy'), income: [], expenses: [], savings: [], loans: [] });
+          }
+          return map.get(key)!;
+        };
+        incomeData.forEach(r => ensure(r.date).income.push(r));
+        expenseData.forEach(r => ensure(r.date).expenses.push(r));
+        savingsData.forEach(r => ensure(r.date).savings.push(r));
+        loansData.forEach(r => ensure(r.date).loans.push(r));
+        return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
+      };
+
+      const groups = buildGroups();
+      const sumAmt = (arr: any[]) => arr.reduce((s, r) => s + Number(r.amount), 0);
+
+      // ── Grand Totals ──
       let y = 50;
       doc.setTextColor(30, 30, 30);
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('Financial Summary', marginLeft, y);
+      doc.text(groupByMonth ? 'Grand Totals (All Months)' : 'Financial Summary', marginLeft, y);
       y += 8;
 
       const summaryItems = [
@@ -152,7 +191,6 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
         );
       }
 
-      // Draw summary as styled cards (2 per row)
       const cardWidth = (contentWidth - 6) / 2;
       const cardHeight = 20;
       summaryItems.forEach((item, idx) => {
@@ -160,22 +198,14 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
         const row = Math.floor(idx / 2);
         const cx = marginLeft + col * (cardWidth + 6);
         const cy = y + row * (cardHeight + 4);
-
-        // Card background
         doc.setFillColor(248, 250, 252);
         doc.roundedRect(cx, cy, cardWidth, cardHeight, 2, 2, 'F');
-
-        // Color accent bar
         doc.setFillColor(item.color[0], item.color[1], item.color[2]);
         doc.roundedRect(cx, cy, 3, cardHeight, 1.5, 1.5, 'F');
-
-        // Label
         doc.setTextColor(100, 100, 100);
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         doc.text(item.label, cx + 8, cy + 8);
-
-        // Value
         doc.setTextColor(item.color[0], item.color[1], item.color[2]);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
@@ -184,6 +214,63 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
 
       const summaryRows = Math.ceil(summaryItems.length / 2);
       y += summaryRows * (cardHeight + 4) + 10;
+
+      // ── Monthly Breakdown Cards (only when grouping by month) ──
+      if (groupByMonth && groups.length > 0) {
+        // start on a fresh page if not enough room
+        if (y > pageHeight - 80) { doc.addPage(); y = 20; }
+        doc.setTextColor(30, 30, 30);
+        doc.setFontSize(13);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Monthly Breakdown', marginLeft, y);
+        y += 7;
+
+        const mCols = 3;
+        const mGap = 4;
+        const mW = (contentWidth - mGap * (mCols - 1)) / mCols;
+        const mH = 28;
+
+        for (let idx = 0; idx < groups.length; idx++) {
+          const col = idx % mCols;
+          if (col === 0 && idx > 0) y += mH + mGap;
+          if (y + mH > pageHeight - 20) { doc.addPage(); y = 20; }
+          const cx = marginLeft + col * (mW + mGap);
+          const g = groups[idx];
+          const inc = sumAmt(g.income);
+          const exp = sumAmt(g.expenses);
+          const sav = sumAmt(g.savings);
+          const net = inc - exp - sav;
+
+          doc.setFillColor(248, 250, 252);
+          doc.roundedRect(cx, y, mW, mH, 2, 2, 'F');
+          doc.setFillColor(37, 99, 235);
+          doc.roundedRect(cx, y, mW, 6, 2, 2, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'bold');
+          doc.text(g.label, cx + 3, y + 4.3);
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7);
+          doc.setTextColor(34, 197, 94);
+          doc.text(`In:  ${formatCurrency(inc)}`, cx + 3, y + 11);
+          doc.setTextColor(239, 68, 68);
+          doc.text(`Ex: ${formatCurrency(exp)}`, cx + 3, y + 15.5);
+          doc.setTextColor(59, 130, 246);
+          doc.text(`Sv: ${formatCurrency(sav)}`, cx + 3, y + 20);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(net >= 0 ? 34 : 239, net >= 0 ? 197 : 68, net >= 0 ? 94 : 68);
+          doc.text(`Net: ${formatCurrency(net)}`, cx + 3, y + 25.5);
+        }
+        y += mH + 8;
+      }
+
+      // ── Reserve TOC page (filled after sections render) ──
+      let tocPageNumber: number | null = null;
+      if (groupByMonth && groups.length > 1) {
+        doc.addPage();
+        tocPageNumber = doc.getNumberOfPages();
+      }
 
       // ── Section helper ──
       const addSection = (
