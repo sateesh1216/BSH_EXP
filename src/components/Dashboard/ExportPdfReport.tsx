@@ -208,7 +208,12 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(120, 120, 120);
-        doc.text(`${rows.length} record${rows.length !== 1 ? 's' : ''}`, marginLeft + 10 + doc.getTextWidth(title) + 4, y);
+        doc.text(
+          `${rows.length} record${rows.length !== 1 ? 's' : ''}`,
+          pageWidth - marginRight,
+          y,
+          { align: 'right' },
+        );
         y += 6;
 
         const colStyles: any = {};
