@@ -352,51 +352,7 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
         y = (doc as any).lastAutoTable.finalY + 14;
       };
 
-      // Group data by month-year key when "all months" selected, otherwise single group.
-      const groupByMonth = selectedMonth === 'all';
-
-      type Group = {
-        key: string;
-        label: string;
-        income: typeof incomeData;
-        expenses: typeof expenseData;
-        savings: typeof savingsData;
-        loans: typeof loansData;
-      };
-
-      const buildGroups = (): Group[] => {
-        if (!groupByMonth) {
-          return [{
-            key: 'all',
-            label,
-            income: incomeData,
-            expenses: expenseData,
-            savings: savingsData,
-            loans: loansData,
-          }];
-        }
-        const map = new Map<string, Group>();
-        const ensure = (date: string): Group => {
-          const d = new Date(date);
-          const key = format(d, 'yyyy-MM');
-          if (!map.has(key)) {
-            map.set(key, {
-              key,
-              label: format(d, 'MMMM yyyy'),
-              income: [], expenses: [], savings: [], loans: [],
-            });
-          }
-          return map.get(key)!;
-        };
-        incomeData.forEach(r => ensure(r.date).income.push(r));
-        expenseData.forEach(r => ensure(r.date).expenses.push(r));
-        savingsData.forEach(r => ensure(r.date).savings.push(r));
-        loansData.forEach(r => ensure(r.date).loans.push(r));
-        return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
-      };
-
-      const groups = buildGroups();
-
+      // ── Render each group (start on its own page when grouped) ──
       const renderMonthHeader = (groupLabel: string) => {
         doc.setFillColor(15, 23, 42);
         doc.rect(marginLeft, y - 5, contentWidth, 10, 'F');
@@ -410,12 +366,10 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
 
       groups.forEach((g, gIdx) => {
         if (groupByMonth) {
-          if (gIdx > 0) {
-            doc.addPage();
-            y = 20;
-          } else {
-            y = ensureSpace(y, 20);
-          }
+          // Each month starts on a fresh page so TOC links land at the top.
+          doc.addPage();
+          y = 20;
+          g.startPage = doc.getNumberOfPages();
           renderMonthHeader(g.label);
         }
 
@@ -483,6 +437,62 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
         }
       });
 
+      // ── Fill in reserved TOC page with clickable links ──
+      if (tocPageNumber && groupByMonth) {
+        doc.setPage(tocPageNumber);
+        let ty = 30;
+        doc.setTextColor(15, 23, 42);
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Table of Contents', marginLeft, ty);
+        doc.setDrawColor(37, 99, 235);
+        doc.setLineWidth(0.6);
+        doc.line(marginLeft, ty + 2, marginLeft + 60, ty + 2);
+        ty += 14;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        groups.forEach((g, idx) => {
+          if (ty > pageHeight - 20) return; // safety
+          const inc = sumAmt(g.income);
+          const exp = sumAmt(g.expenses);
+          const sav = sumAmt(g.savings);
+          const net = inc - exp - sav;
+          const lineY = ty;
+
+          // Index + month name (clickable, blue)
+          doc.setTextColor(37, 99, 235);
+          doc.setFont('helvetica', 'bold');
+          const labelText = `${String(idx + 1).padStart(2, '0')}.  ${g.label}`;
+          doc.text(labelText, marginLeft, lineY);
+          const labelW = doc.getTextWidth(labelText);
+
+          // Net amount right-aligned
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(net >= 0 ? 34 : 239, net >= 0 ? 197 : 68, net >= 0 ? 94 : 68);
+          const netText = `Net ${formatCurrency(net)}`;
+          doc.text(netText, pageWidth - marginRight, lineY, { align: 'right' });
+
+          // Dotted leader
+          doc.setTextColor(180, 180, 180);
+          const leaderStart = marginLeft + labelW + 3;
+          const leaderEnd = pageWidth - marginRight - doc.getTextWidth(netText) - 3;
+          if (leaderEnd > leaderStart) {
+            doc.setLineDashPattern([0.6, 1.4], 0);
+            doc.setDrawColor(180, 180, 180);
+            doc.setLineWidth(0.3);
+            doc.line(leaderStart, lineY - 1.2, leaderEnd, lineY - 1.2);
+            doc.setLineDashPattern([], 0);
+          }
+
+          // Clickable hotspot covers the whole row
+          if (g.startPage) {
+            doc.link(marginLeft, lineY - 5, contentWidth, 8, { pageNumber: g.startPage });
+          }
+
+          ty += 9;
+        });
+      }
 
       // ── Footer on each page ──
       const totalPages = doc.getNumberOfPages();
@@ -490,6 +500,7 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
         doc.setPage(i);
         // Bottom line
         doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.2);
         doc.line(marginLeft, pageHeight - 14, pageWidth - marginRight, pageHeight - 14);
         // Page number
         doc.setFontSize(8);
@@ -498,6 +509,7 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
         doc.text(`BSH Accounts  •  ${label}`, marginLeft, pageHeight - 8);
         doc.text(`Page ${i} of ${totalPages}`, pageWidth - marginRight, pageHeight - 8, { align: 'right' });
       }
+
 
       const fileName = `BSH_Report_${label.replace(/\s+/g, '_')}.pdf`;
       doc.save(fileName);
