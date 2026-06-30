@@ -225,7 +225,6 @@ export type Database = {
           id: string
           is_active: boolean
           must_change_password: boolean
-          temp_password: string | null
           updated_at: string
           user_id: string
         }
@@ -239,7 +238,6 @@ export type Database = {
           id?: string
           is_active?: boolean
           must_change_password?: boolean
-          temp_password?: string | null
           updated_at?: string
           user_id: string
         }
@@ -253,7 +251,6 @@ export type Database = {
           id?: string
           is_active?: boolean
           must_change_password?: boolean
-          temp_password?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -350,14 +347,6 @@ export type Database = {
     Functions: {
       auto_cleanup_login_history: { Args: never; Returns: number }
       cleanup_old_login_history: { Args: never; Returns: undefined }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"
