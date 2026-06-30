@@ -220,6 +220,8 @@ const ProfileSettings = () => {
                   </AvatarFallback>
                 </Avatar>
                 <button
+                  type="button"
+                  aria-label="Change profile photo"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
                   className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
