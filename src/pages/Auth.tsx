@@ -10,6 +10,7 @@ import { Navigate } from 'react-router-dom';
 import { TrendingUp, Mail, Lock, ArrowRight, Shield, AlertTriangle, Phone, User, CheckCircle, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput, validateTextInput } from '@/lib/security';
+import SeoHead from '@/components/SeoHead';
 
 const Auth = () => {
   const { user, signIn, failedAttempts, isBlocked } = useAuth();
