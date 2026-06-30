@@ -85,7 +85,7 @@ const ChangePassword = () => {
       // Clear the must_change_password flag
       await supabase
         .from('profiles')
-        .update({ must_change_password: false, temp_password: null })
+        .update({ must_change_password: false })
         .eq('user_id', user.id);
 
       toast({

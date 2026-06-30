@@ -88,7 +88,6 @@ serve(async (req) => {
           .update({
             full_name,
             must_change_password: true,
-            temp_password: tempPassword,
             created_by: user.id,
           })
           .eq("user_id", newUser.user.id);
@@ -142,7 +141,7 @@ serve(async (req) => {
 
         await adminClient
           .from("profiles")
-          .update({ must_change_password: true, temp_password: newPassword })
+          .update({ must_change_password: true })
           .eq("user_id", user_id);
 
         return new Response(JSON.stringify({ 
