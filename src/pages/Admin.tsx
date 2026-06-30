@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LogOut, TrendingUp, Shield, Menu } from 'lucide-react';
-import { Navigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import AdminSidebar from '@/components/Admin/AdminSidebar';
 import AdminDashboard from '@/components/Admin/AdminDashboard';
