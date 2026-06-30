@@ -14,6 +14,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from 'next-themes';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import SeoHead from '@/components/SeoHead';
 import {
   User,
   ArrowLeft,
