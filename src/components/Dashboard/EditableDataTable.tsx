@@ -34,6 +34,27 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
   const [reminderConfirmItem, setReminderConfirmItem] = useState<any>(null);
   const [showRemindersPanel, setShowRemindersPanel] = useState(false);
 
+  // The expense-attachments bucket is private; resolve a short-lived signed URL
+  // on click rather than relying on long-lived public URLs.
+  const openAttachment = async (fileUrl: string) => {
+    if (!fileUrl) return;
+    try {
+      const parts = fileUrl.split('/expense-attachments/');
+      const filePath = parts.length > 1 ? parts[1] : fileUrl;
+      const { data, error } = await supabase.storage
+        .from('expense-attachments')
+        .createSignedUrl(filePath, 60);
+      if (error || !data?.signedUrl) throw error ?? new Error('No signed URL');
+      window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+    } catch (err: any) {
+      toast({
+        title: 'Unable to open file',
+        description: err?.message || 'Could not generate a secure link.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Fetch existing reminders for this user
   const { data: existingReminders } = useQuery({
     queryKey: ['recurring-reminders', user?.id],
@@ -532,15 +553,14 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
                                 className="cursor-pointer text-xs h-8"
                               />
                               {(item as any).attachment_url && (
-                                <a 
-                                  href={(item as any).attachment_url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
+                                <button
+                                  type="button"
+                                  onClick={() => openAttachment((item as any).attachment_url)}
                                   className="flex items-center gap-1 text-xs text-primary hover:underline"
                                 >
                                   <FileText className="h-3 w-3" />
                                   Current Bill
-                                </a>
+                                </button>
                               )}
                             </div>
                             <div className="space-y-1">
@@ -552,15 +572,14 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
                                 className="cursor-pointer text-xs h-8"
                               />
                               {(item as any).warranty_url && (
-                                <a 
-                                  href={(item as any).warranty_url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
+                                <button
+                                  type="button"
+                                  onClick={() => openAttachment((item as any).warranty_url)}
                                   className="flex items-center gap-1 text-xs text-primary hover:underline"
                                 >
                                   <FileText className="h-3 w-3" />
                                   Current Warranty
-                                </a>
+                                </button>
                               )}
                             </div>
                           </div>
@@ -570,15 +589,14 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
                             <div className="flex flex-wrap gap-2">
                               {(item as any).attachment_url && (
                                 <div className="inline-flex items-center gap-1 bg-primary/10 rounded-md">
-                                  <a 
-                                    href={(item as any).attachment_url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
+                                  <button
+                                    type="button"
+                                    onClick={() => openAttachment((item as any).attachment_url)}
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 rounded-l-md transition-colors"
                                   >
                                     <FileText className="h-3.5 w-3.5" />
                                     View Bill
-                                  </a>
+                                  </button>
                                   <button
                                     onClick={() => handleDeleteAttachment(item.id, 'bill')}
                                     className="inline-flex items-center px-2 py-1.5 text-xs text-destructive hover:bg-destructive/10 rounded-r-md transition-colors"
@@ -591,15 +609,14 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
                               )}
                               {(item as any).warranty_url && (
                                 <div className="inline-flex items-center gap-1 bg-secondary rounded-md">
-                                  <a 
-                                    href={(item as any).warranty_url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
+                                  <button
+                                    type="button"
+                                    onClick={() => openAttachment((item as any).warranty_url)}
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:bg-secondary/80 rounded-l-md transition-colors"
                                   >
                                     <FileText className="h-3.5 w-3.5" />
                                     View Warranty
-                                  </a>
+                                  </button>
                                   <button
                                     onClick={() => handleDeleteAttachment(item.id, 'warranty')}
                                     className="inline-flex items-center px-2 py-1.5 text-xs text-destructive hover:bg-destructive/10 rounded-r-md transition-colors"

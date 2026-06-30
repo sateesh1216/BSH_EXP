@@ -40,7 +40,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const checkUserRole = async (userId: string) => {
     try {
-      const { data, error } = await supabase.rpc('is_admin', { _user_id: userId });
+      // Admin check via the user's own user_roles row (RLS: "Users can view their own role").
+      // The previous SECURITY DEFINER RPC was removed from the API surface for security.
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
       if (error) throw error;
       setIsAdmin(Boolean(data));
     } catch {
