@@ -637,6 +637,11 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-transparent">
+      <SeoHead
+        title="Dashboard — BSH Accounts"
+        description="Your personal finance dashboard for income, expenses, savings, hand loans, and monthly reports."
+        path="/"
+      />
       {/* Header */}
       <header className="border-b border-border/40 sticky top-0 z-50 backdrop-blur-md bg-card/80 h-[65px]">
         <div className="px-4 sm:px-6 lg:px-8 h-full">
