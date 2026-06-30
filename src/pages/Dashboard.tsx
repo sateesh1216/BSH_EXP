@@ -28,6 +28,7 @@ import DownloadData from '@/components/Dashboard/DownloadData';
 import DataUpload from '@/components/Dashboard/DataUpload';
 import DeleteData from '@/components/Dashboard/DeleteData';
 import HandLoanForm from '@/components/Dashboard/HandLoanForm';
+import SeoHead from '@/components/SeoHead';
 import QuickAddExpense from '@/components/Dashboard/QuickAddExpense';
 import UpcomingReminders from '@/components/Dashboard/UpcomingReminders';
 import ExportPdfReport from '@/components/Dashboard/ExportPdfReport';
