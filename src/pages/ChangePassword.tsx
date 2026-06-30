@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Navigate } from 'react-router-dom';
 import { TrendingUp, Lock, ArrowRight, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import SeoHead from '@/components/SeoHead';
 
 const ChangePassword = () => {
   const { user, loading: authLoading } = useAuth();
@@ -119,7 +120,13 @@ const ChangePassword = () => {
             </div>
             <h1 className="text-4xl font-bold text-gradient">BSH Accounts</h1>
           </div>
+          <h2 className="sr-only">Update your password</h2>
         </div>
+        <SeoHead
+          title="Change Password — BSH Accounts"
+          description="Update your BSH Accounts password to keep your financial data secure."
+          path="/change-password"
+        />
 
         <Card className="bg-gradient-card border-border/50 shadow-xl backdrop-blur-sm animate-slide-up">
           <CardHeader className="text-center pb-4">

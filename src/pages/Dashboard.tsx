@@ -28,6 +28,7 @@ import DownloadData from '@/components/Dashboard/DownloadData';
 import DataUpload from '@/components/Dashboard/DataUpload';
 import DeleteData from '@/components/Dashboard/DeleteData';
 import HandLoanForm from '@/components/Dashboard/HandLoanForm';
+import SeoHead from '@/components/SeoHead';
 import QuickAddExpense from '@/components/Dashboard/QuickAddExpense';
 import UpcomingReminders from '@/components/Dashboard/UpcomingReminders';
 import ExportPdfReport from '@/components/Dashboard/ExportPdfReport';
@@ -636,6 +637,11 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-transparent">
+      <SeoHead
+        title="Dashboard — BSH Accounts"
+        description="Your personal finance dashboard for income, expenses, savings, hand loans, and monthly reports."
+        path="/"
+      />
       {/* Header */}
       <header className="border-b border-border/40 sticky top-0 z-50 backdrop-blur-md bg-card/80 h-[65px]">
         <div className="px-4 sm:px-6 lg:px-8 h-full">
@@ -663,7 +669,7 @@ const Dashboard = () => {
                 <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-lg sm:text-xl font-bold text-gradient">BSH Accounts</h1>
+                <h1 className="text-lg sm:text-xl font-bold text-gradient">BSH Accounts — Personal Finance Dashboard</h1>
                 <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Financial Management</p>
               </div>
             </div>

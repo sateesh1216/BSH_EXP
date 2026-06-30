@@ -14,6 +14,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from 'next-themes';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import SeoHead from '@/components/SeoHead';
 import {
   User,
   ArrowLeft,
@@ -179,6 +180,12 @@ const ProfileSettings = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-surface-elevated to-muted/50">
+      <SeoHead
+        title="Profile Settings — BSH Accounts"
+        description="Update your BSH Accounts profile, avatar, theme, and notification preferences."
+        path="/profile"
+      />
+      <h2 className="sr-only">Profile and preferences</h2>
       {/* Header */}
       <header className="bg-card/80 backdrop-blur-sm border-b border-border sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-4">
@@ -220,6 +227,8 @@ const ProfileSettings = () => {
                   </AvatarFallback>
                 </Avatar>
                 <button
+                  type="button"
+                  aria-label="Change profile photo"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
                   className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"

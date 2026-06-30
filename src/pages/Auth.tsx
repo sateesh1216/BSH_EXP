@@ -10,6 +10,7 @@ import { Navigate } from 'react-router-dom';
 import { TrendingUp, Mail, Lock, ArrowRight, Shield, AlertTriangle, Phone, User, CheckCircle, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput, validateTextInput } from '@/lib/security';
+import SeoHead from '@/components/SeoHead';
 
 const Auth = () => {
   const { user, signIn, failedAttempts, isBlocked } = useAuth();
@@ -129,9 +130,15 @@ const Auth = () => {
               </div>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gradient mb-2">BSH Accounts</h1>
+          <h1 className="text-3xl font-bold text-gradient mb-2">Sign in to BSH Accounts</h1>
+          <h2 className="sr-only">Account access</h2>
           <p className="text-muted-foreground text-sm">Manage your finances with confidence</p>
         </div>
+        <SeoHead
+          title="Sign in to BSH Accounts"
+          description="Sign in to BSH Accounts to manage your income, expenses, savings, and hand loans securely."
+          path="/auth"
+        />
 
         {/* Main Card */}
         <Card className="border-border/40 shadow-xl backdrop-blur-md bg-card/95 animate-slide-up">
