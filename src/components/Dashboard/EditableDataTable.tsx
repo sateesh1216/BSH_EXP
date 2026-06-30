@@ -34,6 +34,27 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
   const [reminderConfirmItem, setReminderConfirmItem] = useState<any>(null);
   const [showRemindersPanel, setShowRemindersPanel] = useState(false);
 
+  // The expense-attachments bucket is private; resolve a short-lived signed URL
+  // on click rather than relying on long-lived public URLs.
+  const openAttachment = async (fileUrl: string) => {
+    if (!fileUrl) return;
+    try {
+      const parts = fileUrl.split('/expense-attachments/');
+      const filePath = parts.length > 1 ? parts[1] : fileUrl;
+      const { data, error } = await supabase.storage
+        .from('expense-attachments')
+        .createSignedUrl(filePath, 60);
+      if (error || !data?.signedUrl) throw error ?? new Error('No signed URL');
+      window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+    } catch (err: any) {
+      toast({
+        title: 'Unable to open file',
+        description: err?.message || 'Could not generate a secure link.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Fetch existing reminders for this user
   const { data: existingReminders } = useQuery({
     queryKey: ['recurring-reminders', user?.id],
