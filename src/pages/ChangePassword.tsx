@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Navigate } from 'react-router-dom';
 import { TrendingUp, Lock, ArrowRight, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import SeoHead from '@/components/SeoHead';
 
 const ChangePassword = () => {
   const { user, loading: authLoading } = useAuth();
