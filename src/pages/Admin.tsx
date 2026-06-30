@@ -13,24 +13,8 @@ import AdminSettings from '@/components/Admin/AdminSettings';
 import AccessRequests from '@/components/Admin/AccessRequests';
 
 const Admin = () => {
-  const { user, signOut, isAdmin, loading } = useAuth();
+  const { signOut } = useAuth();
   const [activeSection, setActiveSection] = useState('dashboard');
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  if (!isAdmin) {
-    return <Navigate to="/" replace />;
-  }
 
   const renderContent = () => {
     switch (activeSection) {
