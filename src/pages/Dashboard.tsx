@@ -663,7 +663,7 @@ const Dashboard = () => {
                 <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-lg sm:text-xl font-bold text-gradient">BSH Accounts</h1>
+                <h1 className="text-lg sm:text-xl font-bold text-gradient">BSH Accounts — Personal Finance Dashboard</h1>
                 <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Financial Management</p>
               </div>
             </div>
