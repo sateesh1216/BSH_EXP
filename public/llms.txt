@@ -1,0 +1,7 @@
+# BSH Accounts
+
+> BSH Accounts is a secure personal finance dashboard for tracking income, expenses, savings, and hand loans with monthly reports.
+
+## Pages
+
+- [Sign in](/auth): Account access for existing users and access requests for new users.
