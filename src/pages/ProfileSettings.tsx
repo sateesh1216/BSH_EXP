@@ -179,6 +179,12 @@ const ProfileSettings = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-surface-elevated to-muted/50">
+      <SeoHead
+        title="Profile Settings — BSH Accounts"
+        description="Update your BSH Accounts profile, avatar, theme, and notification preferences."
+        path="/profile"
+      />
+      <h2 className="sr-only">Profile and preferences</h2>
       {/* Header */}
       <header className="bg-card/80 backdrop-blur-sm border-b border-border sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-4">
