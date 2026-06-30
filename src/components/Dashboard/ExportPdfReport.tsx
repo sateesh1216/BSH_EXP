@@ -402,20 +402,20 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
           { 0: { cellWidth: 10 }, 1: { cellWidth: 28 }, 3: { cellWidth: 28 } },
         );
 
-        // Expense Breakdown by Category (expense_details)
+        // Expense Breakdown by Payment Mode (payment_mode)
         if (g.expenses.length > 0) {
           const totals = new Map<string, { amount: number; count: number }>();
           g.expenses.forEach(e => {
-            const key = (e.expense_details || 'Other').trim() || 'Other';
+            const key = (e.payment_mode || 'Other').trim() || 'Other';
             const prev = totals.get(key) || { amount: 0, count: 0 };
             totals.set(key, { amount: prev.amount + Number(e.amount), count: prev.count + 1 });
           });
           const grand = Array.from(totals.values()).reduce((s, v) => s + v.amount, 0);
           const breakdownRows = Array.from(totals.entries())
             .sort((a, b) => b[1].amount - a[1].amount)
-            .map(([category, v], idx) => [
+            .map(([mode, v], idx) => [
               String(idx + 1),
-              category,
+              mode,
               String(v.count),
               `${((v.amount / grand) * 100).toFixed(1)}%`,
               formatCurrency(v.amount),
@@ -429,9 +429,9 @@ const ExportPdfReport = ({ selectedMonth, selectedYear }: ExportPdfReportProps) 
           ]);
 
           addSection(
-            'Expense Breakdown by Category',
+            'Expense Breakdown by Payment Mode',
             [217, 70, 239],
-            ['#', 'Category', 'Count', 'Share %', 'Amount'],
+            ['#', 'Payment Mode', 'Count', 'Share %', 'Amount'],
             breakdownRows,
             [4],
             { 0: { cellWidth: 10 }, 2: { cellWidth: 20, halign: 'center' }, 3: { cellWidth: 22, halign: 'right' } },
