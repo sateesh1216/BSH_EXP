@@ -125,9 +125,31 @@ const DataUpload = () => {
     const savings = [
       { date: '2024-01-05', amount: 5000, details: 'Emergency Fund' },
       { date: '2024-01-31', amount: 10000, details: 'Monthly Savings' },
-    ]), 'Savings');
+    ];
+
+    const buildSheet = (rows: any[], headers: string[], widths: number[]) => {
+      const ws = XLSX.utils.json_to_sheet(rows, { header: headers });
+      ws['!cols'] = widths.map((w) => ({ wch: w }));
+      // Style header row (bold + fill)
+      headers.forEach((_, i) => {
+        const ref = XLSX.utils.encode_cell({ r: 0, c: i });
+        if (ws[ref]) {
+          ws[ref].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' } },
+            fill: { fgColor: { rgb: '1E3A8A' } },
+            alignment: { horizontal: 'center' },
+          };
+        }
+      });
+      return ws;
+    };
+
+    XLSX.utils.book_append_sheet(wb, buildSheet(income, ['date', 'amount', 'source'], [14, 12, 30]), 'Income');
+    XLSX.utils.book_append_sheet(wb, buildSheet(expenses, ['date', 'amount', 'expense_details', 'payment_mode'], [14, 12, 30, 18]), 'Expenses');
+    XLSX.utils.book_append_sheet(wb, buildSheet(savings, ['date', 'amount', 'details'], [14, 12, 30]), 'Savings');
+
     XLSX.writeFile(wb, 'bsh_accounts_template.xlsx');
-    toast({ title: 'Template downloaded', description: 'Fill it in and drag it back here.' });
+    toast({ title: 'Template downloaded', description: 'Open it, fill in your data, then drag it back here.' });
   };
 
   const parseFile = useCallback(async (f: File) => {
