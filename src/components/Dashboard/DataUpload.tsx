@@ -1,336 +1,358 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, Download, FileSpreadsheet } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Upload, Download, FileSpreadsheet, CheckCircle2, AlertCircle, X, FileUp, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 import * as XLSX from 'xlsx';
 
+type ParsedRow = {
+  data: any;
+  valid: boolean;
+  errors: string[];
+  rowNumber: number;
+};
+
+type ParsedSheet = {
+  name: 'Income' | 'Expenses' | 'Savings';
+  rows: ParsedRow[];
+};
+
+const REQUIRED: Record<string, string[]> = {
+  Income: ['date', 'amount', 'source'],
+  Expenses: ['date', 'amount', 'expense_details', 'payment_mode'],
+  Savings: ['date', 'amount'],
+};
+
+const parseDate = (v: any): string | null => {
+  if (!v && v !== 0) return null;
+  try {
+    if (typeof v === 'number') {
+      const d = new Date((v - 25569) * 86400 * 1000);
+      return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
+    }
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
+  } catch {
+    return null;
+  }
+};
+
+const validateRow = (sheet: string, row: any, index: number): ParsedRow => {
+  const errors: string[] = [];
+  const required = REQUIRED[sheet] || [];
+  const parsedDate = parseDate(row.date);
+  const amount = Number(row.amount);
+
+  if (!parsedDate) errors.push('Invalid date');
+  if (isNaN(amount) || amount <= 0) errors.push('Invalid amount');
+  for (const f of required) {
+    if (f === 'date' || f === 'amount') continue;
+    if (!row[f]) errors.push(`Missing ${f}`);
+  }
+
+  return {
+    rowNumber: index + 2,
+    data: { ...row, date: parsedDate, amount },
+    valid: errors.length === 0,
+    errors,
+  };
+};
+
 const DataUpload = () => {
+  const [dragging, setDragging] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [parsing, setParsing] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [parsed, setParsed] = useState<ParsedSheet[]>([]);
+  const [progress, setProgress] = useState({ done: 0, total: 0, success: 0, failed: 0 });
+  const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
   const downloadTemplate = () => {
-    // Create sample data for each sheet
-    const incomeTemplate = [
-      { date: '2024-01-15', amount: 50000, source: 'Salary' },
-      { date: '2024-01-20', amount: 5000, source: 'Freelance Work' },
-    ];
-
-    const expensesTemplate = [
-      { date: '2024-01-10', amount: 2000, expense_details: 'Bike Petrol', payment_mode: 'Card' },
-      { date: '2024-01-12', amount: 1500, expense_details: 'Groceries', payment_mode: 'Cash' },
-    ];
-
-    const savingsTemplate = [
-      { date: '2024-01-31', amount: 10000, details: 'Monthly Savings' },
-      { date: '2024-01-15', amount: 5000, details: 'Emergency Fund' },
-    ];
-
-    // Create workbook
     const wb = XLSX.utils.book_new();
-    
-    // Add instruction sheet
     const instructions = [
-      ['INSTRUCTIONS FOR DATA UPLOAD'],
+      ['📘 HOW TO UPLOAD YOUR FINANCIAL DATA'],
       [''],
-      ['1. Fill in your data in the respective sheets (Income, Expenses, Savings)'],
+      ['1. Fill each sheet: Income, Expenses, Savings'],
       ['2. Date format: YYYY-MM-DD (e.g., 2024-01-15)'],
-      ['3. Amount: Numbers only (e.g., 1500, 50000)'],
-      ['4. Do NOT change column headers'],
-      ['5. Delete the sample rows and add your actual data'],
-      ['6. Save as Excel file (.xlsx) and upload'],
-      [''],
-      ['COLUMN REQUIREMENTS:'],
-      [''],
-      ['Income Sheet:'],
-      ['- date: Date of income (YYYY-MM-DD)'],
-      ['- amount: Income amount (number)'],
-      ['- source: Source of income (text)'],
-      [''],
-      ['Expenses Sheet:'],
-      ['- date: Date of expense (YYYY-MM-DD)'],
-      ['- amount: Expense amount (number)'],
-      ['- expense_details: Description of expense (text)'],
-      ['- payment_mode: How you paid (Cash/Card/UPI/etc.)'],
-      [''],
-      ['Savings Sheet:'],
-      ['- date: Date of saving (YYYY-MM-DD)'],
-      ['- amount: Savings amount (number)'],
-      ['- details: Description of savings (text)'],
+      ['3. Amount: numbers only (no ₹ or commas)'],
+      ['4. Do NOT rename or reorder columns'],
+      ['5. Save as .xlsx and drop back into the upload area'],
     ];
-
-    const instructionWs = XLSX.utils.aoa_to_sheet(instructions);
-    XLSX.utils.book_append_sheet(wb, instructionWs, 'Instructions');
-
-    // Add data sheets
-    const incomeWs = XLSX.utils.json_to_sheet(incomeTemplate);
-    const expensesWs = XLSX.utils.json_to_sheet(expensesTemplate);
-    const savingsWs = XLSX.utils.json_to_sheet(savingsTemplate);
-
-    XLSX.utils.book_append_sheet(wb, incomeWs, 'Income');
-    XLSX.utils.book_append_sheet(wb, expensesWs, 'Expenses');
-    XLSX.utils.book_append_sheet(wb, savingsWs, 'Savings');
-
-    // Download file
-    XLSX.writeFile(wb, 'financial_data_template.xlsx');
-    
-    toast({
-      title: "Template Downloaded",
-      description: "Fill in your data and upload the file back.",
-    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(instructions), 'Instructions');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+      { date: '2024-01-15', amount: 50000, source: 'Salary' },
+    ]), 'Income');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+      { date: '2024-01-10', amount: 2000, expense_details: 'Groceries', payment_mode: 'UPI' },
+    ]), 'Expenses');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+      { date: '2024-01-31', amount: 10000, details: 'Monthly Savings' },
+    ]), 'Savings');
+    XLSX.writeFile(wb, 'bsh_accounts_template.xlsx');
+    toast({ title: 'Template downloaded', description: 'Fill it in and drag it back here.' });
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to upload data.",
-        variant: "destructive",
-      });
+  const parseFile = useCallback(async (f: File) => {
+    setParsing(true);
+    setParsed([]);
+    try {
+      const buf = await f.arrayBuffer();
+      const wb = XLSX.read(buf);
+      const sheets: ParsedSheet[] = [];
+      for (const name of ['Income', 'Expenses', 'Savings'] as const) {
+        if (!wb.SheetNames.includes(name)) continue;
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[name]) as any[];
+        sheets.push({ name, rows: rows.map((r, i) => validateRow(name, r, i)) });
+      }
+      setParsed(sheets);
+      if (sheets.length === 0) {
+        toast({ title: 'No valid sheets', description: 'Expected Income, Expenses, or Savings sheets.', variant: 'destructive' });
+      }
+    } catch (e) {
+      toast({ title: 'Parse failed', description: 'Could not read this file.', variant: 'destructive' });
+    } finally {
+      setParsing(false);
+    }
+  }, [toast]);
+
+  const handleFiles = (files: FileList | null) => {
+    const f = files?.[0];
+    if (!f) return;
+    if (!/\.(xlsx|xls)$/i.test(f.name)) {
+      toast({ title: 'Unsupported file', description: 'Please upload .xlsx or .xls', variant: 'destructive' });
       return;
     }
+    setFile(f);
+    parseFile(f);
+  };
 
+  const reset = () => {
+    setFile(null);
+    setParsed([]);
+    setProgress({ done: 0, total: 0, success: 0, failed: 0 });
+    if (inputRef.current) inputRef.current.value = '';
+  };
+
+  const totalValid = parsed.reduce((s, sh) => s + sh.rows.filter(r => r.valid).length, 0);
+  const totalInvalid = parsed.reduce((s, sh) => s + sh.rows.filter(r => !r.valid).length, 0);
+
+  const doImport = async () => {
+    if (!user || totalValid === 0) return;
     setUploading(true);
-    try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      
-      let successCount = 0;
-      let errorCount = 0;
-      let skippedCount = 0;
-      const errors: string[] = [];
-      const skippedRows: string[] = [];
+    setProgress({ done: 0, total: totalValid, success: 0, failed: 0 });
+    let success = 0, failed = 0, done = 0;
 
-      // Helper function to parse date
-      const parseDate = (dateValue: any): string | null => {
-        if (!dateValue) return null;
-        
-        try {
-          // Handle Excel date numbers
-          if (typeof dateValue === 'number') {
-            const excelDate = new Date((dateValue - 25569) * 86400 * 1000);
-            return excelDate.toISOString().split('T')[0];
-          }
-          
-          // Handle string dates
-          const date = new Date(dateValue);
-          if (isNaN(date.getTime())) return null;
-          
-          return date.toISOString().split('T')[0];
-        } catch {
-          return null;
+    for (const sheet of parsed) {
+      const table = sheet.name.toLowerCase() as 'income' | 'expenses' | 'savings';
+      for (const row of sheet.rows) {
+        if (!row.valid) continue;
+        const payload: any = { user_id: user.id, date: row.data.date, amount: row.data.amount };
+        if (table === 'income') payload.source = String(row.data.source);
+        if (table === 'expenses') {
+          payload.expense_details = String(row.data.expense_details);
+          payload.payment_mode = String(row.data.payment_mode);
         }
-      };
+        if (table === 'savings' && row.data.details) payload.details = String(row.data.details);
 
-      // Process Income sheet
-      if (workbook.SheetNames.includes('Income')) {
-        const incomeSheet = workbook.Sheets['Income'];
-        const incomeData = XLSX.utils.sheet_to_json(incomeSheet) as any[];
-        
-        for (let i = 0; i < incomeData.length; i++) {
-          const row = incomeData[i];
-          try {
-            const parsedDate = parseDate(row.date);
-            const amount = Number(row.amount);
-            
-            // Validate required fields
-            if (!parsedDate || isNaN(amount) || !row.source) {
-              skippedCount++;
-              const missing = [];
-              if (!parsedDate) missing.push('date');
-              if (isNaN(amount)) missing.push('amount');
-              if (!row.source) missing.push('source');
-              skippedRows.push(`Income row ${i + 2}: Missing ${missing.join(', ')}`);
-              continue;
-            }
-
-            const { error } = await supabase.from('income').insert({
-              user_id: user.id,
-              date: parsedDate,
-              amount: amount,
-              source: row.source.toString()
-            });
-            
-            if (error) throw error;
-            successCount++;
-          } catch (error) {
-            errorCount++;
-            errors.push(`Income row ${i + 2}: ${error}`);
-          }
-        }
+        const { error } = await supabase.from(table).insert(payload);
+        done++;
+        if (error) failed++; else success++;
+        setProgress({ done, total: totalValid, success, failed });
       }
-
-      // Process Expenses sheet
-      if (workbook.SheetNames.includes('Expenses')) {
-        const expensesSheet = workbook.Sheets['Expenses'];
-        const expensesData = XLSX.utils.sheet_to_json(expensesSheet) as any[];
-        
-        for (let i = 0; i < expensesData.length; i++) {
-          const row = expensesData[i];
-          try {
-            const parsedDate = parseDate(row.date);
-            const amount = Number(row.amount);
-            
-            // Validate required fields
-            if (!parsedDate || isNaN(amount) || !row.expense_details || !row.payment_mode) {
-              skippedCount++;
-              const missing = [];
-              if (!parsedDate) missing.push('date');
-              if (isNaN(amount)) missing.push('amount');
-              if (!row.expense_details) missing.push('expense_details');
-              if (!row.payment_mode) missing.push('payment_mode');
-              skippedRows.push(`Expenses row ${i + 2}: Missing ${missing.join(', ')}`);
-              continue;
-            }
-
-            const { error } = await supabase.from('expenses').insert({
-              user_id: user.id,
-              date: parsedDate,
-              amount: amount,
-              expense_details: row.expense_details.toString(),
-              payment_mode: row.payment_mode.toString()
-            });
-            
-            if (error) throw error;
-            successCount++;
-          } catch (error) {
-            errorCount++;
-            errors.push(`Expenses row ${i + 2}: ${error}`);
-          }
-        }
-      }
-
-      // Process Savings sheet
-      if (workbook.SheetNames.includes('Savings')) {
-        const savingsSheet = workbook.Sheets['Savings'];
-        const savingsData = XLSX.utils.sheet_to_json(savingsSheet) as any[];
-        
-        for (let i = 0; i < savingsData.length; i++) {
-          const row = savingsData[i];
-          try {
-            const parsedDate = parseDate(row.date);
-            const amount = Number(row.amount);
-            
-            // Validate required fields
-            if (!parsedDate || isNaN(amount)) {
-              skippedCount++;
-              const missing = [];
-              if (!parsedDate) missing.push('date');
-              if (isNaN(amount)) missing.push('amount');
-              skippedRows.push(`Savings row ${i + 2}: Missing ${missing.join(', ')}`);
-              continue;
-            }
-
-            const { error } = await supabase.from('savings').insert({
-              user_id: user.id,
-              date: parsedDate,
-              amount: amount,
-              details: row.details ? row.details.toString() : null
-            });
-            
-            if (error) throw error;
-            successCount++;
-          } catch (error) {
-            errorCount++;
-            errors.push(`Savings row ${i + 2}: ${error}`);
-          }
-        }
-      }
-
-      // Show detailed results
-      if (successCount > 0) {
-        let description = `${successCount} records uploaded successfully`;
-        if (skippedCount > 0) description += `, ${skippedCount} rows skipped`;
-        if (errorCount > 0) description += `, ${errorCount} failed`;
-        
-        toast({
-          title: "Upload Complete",
-          description: description + '. Check console for details.',
-        });
-        
-        // Log details to console for user reference
-        if (skippedRows.length > 0) {
-          console.log('Skipped rows (missing data):', skippedRows);
-        }
-        if (errors.length > 0) {
-          console.log('Error details:', errors);
-        }
-      } else {
-        toast({
-          title: "Upload Failed",
-          description: `No records were uploaded. ${skippedCount} rows skipped, ${errorCount} errors. Check console for details.`,
-          variant: "destructive",
-        });
-        
-        console.log('Skipped rows:', skippedRows);
-        console.log('Errors:', errors);
-      }
-
-      // Clear the input
-      event.target.value = '';
-      
-    } catch (error) {
-      console.error('File processing error:', error);
-      toast({
-        title: "Upload Error",
-        description: "Failed to process the file. Please check the format and try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
     }
+
+    setUploading(false);
+    toast({
+      title: failed === 0 ? '✅ Import complete' : 'Import finished with errors',
+      description: `${success} added${failed ? `, ${failed} failed` : ''}.`,
+      variant: failed && !success ? 'destructive' : 'default',
+    });
+    if (success > 0) setTimeout(reset, 1500);
   };
 
   return (
-    <Card>
+    <Card className="border-border/60">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileSpreadsheet className="h-5 w-5" />
-          Upload Financial Data
-        </CardTitle>
-        <CardDescription>
-          Upload your existing financial data from an Excel file
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-4">
-          <Button 
-            onClick={downloadTemplate}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5 text-primary" />
+              Upload Financial Data
+            </CardTitle>
+            <CardDescription className="mt-1">
+              Drag & drop an Excel file, preview parsed rows, then import.
+            </CardDescription>
+          </div>
+          <Button onClick={downloadTemplate} variant="outline" size="sm" className="gap-2">
             <Download className="h-4 w-4" />
-            Download Template
+            Template
           </Button>
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="file-upload">Upload Excel File</Label>
-          <div className="flex items-center gap-2">
-            <Input
-              id="file-upload"
+      </CardHeader>
+
+      <CardContent className="space-y-5">
+        {/* Drop zone */}
+        {!file && (
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
+            onClick={() => inputRef.current?.click()}
+            className={cn(
+              'relative border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all',
+              dragging
+                ? 'border-primary bg-primary/10 scale-[1.01]'
+                : 'border-border/60 hover:border-primary/60 hover:bg-accent/40'
+            )}
+          >
+            <input
+              ref={inputRef}
               type="file"
               accept=".xlsx,.xls"
-              onChange={handleFileUpload}
-              disabled={uploading}
-              className="flex-1"
+              className="hidden"
+              onChange={(e) => handleFiles(e.target.files)}
             />
-            <Button disabled={uploading} variant="outline" size="icon">
-              <Upload className="h-4 w-4" />
+            <div className={cn('mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-3 transition-colors', dragging ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary')}>
+              <FileUp className="h-7 w-7" />
+            </div>
+            <p className="font-semibold text-foreground">
+              {dragging ? 'Drop to preview' : 'Drag & drop your Excel file here'}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              or <span className="text-primary underline">browse</span> — .xlsx or .xls
+            </p>
+          </div>
+        )}
+
+        {/* File selected */}
+        {file && (
+          <div className="flex items-center justify-between p-3 rounded-lg bg-accent/40 border border-border/60">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 rounded-md bg-primary/10 text-primary shrink-0">
+                <FileSpreadsheet className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{file.name}</p>
+                <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
+              </div>
+            </div>
+            <Button variant="ghost" size="icon" onClick={reset} disabled={uploading}>
+              <X className="h-4 w-4" />
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Accepted formats: .xlsx, .xls
-          </p>
-        </div>
+        )}
+
+        {parsing && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Parsing file…
+          </div>
+        )}
+
+        {/* Preview */}
+        {parsed.length > 0 && !parsing && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="secondary" className="gap-1">
+                <CheckCircle2 className="h-3 w-3 text-success" /> {totalValid} valid
+              </Badge>
+              {totalInvalid > 0 && (
+                <Badge variant="secondary" className="gap-1">
+                  <AlertCircle className="h-3 w-3 text-destructive" /> {totalInvalid} with issues
+                </Badge>
+              )}
+            </div>
+
+            <Tabs defaultValue={parsed[0].name}>
+              <TabsList>
+                {parsed.map((s) => (
+                  <TabsTrigger key={s.name} value={s.name}>
+                    {s.name} ({s.rows.length})
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              {parsed.map((sheet) => (
+                <TabsContent key={sheet.name} value={sheet.name}>
+                  <div className="rounded-lg border border-border/60 overflow-hidden max-h-80 overflow-y-auto">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-card z-10">
+                        <TableRow>
+                          <TableHead className="w-12">#</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Amount</TableHead>
+                          {sheet.name === 'Income' && <TableHead>Source</TableHead>}
+                          {sheet.name === 'Expenses' && <><TableHead>Details</TableHead><TableHead>Payment</TableHead></>}
+                          {sheet.name === 'Savings' && <TableHead>Details</TableHead>}
+                          <TableHead className="w-24">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sheet.rows.slice(0, 100).map((r) => (
+                          <TableRow key={r.rowNumber} className={cn(!r.valid && 'bg-destructive/5')}>
+                            <TableCell className="text-xs text-muted-foreground">{r.rowNumber}</TableCell>
+                            <TableCell>{r.data.date || <span className="text-destructive text-xs">—</span>}</TableCell>
+                            <TableCell>{isNaN(r.data.amount) ? <span className="text-destructive text-xs">—</span> : r.data.amount}</TableCell>
+                            {sheet.name === 'Income' && <TableCell>{r.data.source || '—'}</TableCell>}
+                            {sheet.name === 'Expenses' && <><TableCell>{r.data.expense_details || '—'}</TableCell><TableCell>{r.data.payment_mode || '—'}</TableCell></>}
+                            {sheet.name === 'Savings' && <TableCell>{r.data.details || '—'}</TableCell>}
+                            <TableCell>
+                              {r.valid ? (
+                                <Badge variant="outline" className="text-success border-success/40 gap-1">
+                                  <CheckCircle2 className="h-3 w-3" /> OK
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-destructive border-destructive/40 gap-1" title={r.errors.join(', ')}>
+                                  <AlertCircle className="h-3 w-3" /> Fix
+                                </Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    {sheet.rows.length > 100 && (
+                      <div className="text-xs text-muted-foreground text-center py-2 border-t">
+                        Showing first 100 of {sheet.rows.length} rows
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              ))}
+            </Tabs>
+
+            {/* Progress */}
+            {uploading && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Importing… {progress.done}/{progress.total}</span>
+                  <span>{progress.success} added · {progress.failed} failed</span>
+                </div>
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={reset} disabled={uploading}>Cancel</Button>
+              <Button onClick={doImport} disabled={uploading || totalValid === 0} className="gap-2">
+                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                Import {totalValid} row{totalValid === 1 ? '' : 's'}
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
