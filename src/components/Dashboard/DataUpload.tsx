@@ -78,23 +78,52 @@ const DataUpload = () => {
 
   const downloadTemplate = () => {
     const wb = XLSX.utils.book_new();
+
+    // ---------- Instructions sheet ----------
     const instructions = [
-      ['📘 HOW TO UPLOAD YOUR FINANCIAL DATA'],
+      ['BSH ACCOUNTS — DATA UPLOAD TEMPLATE'],
       [''],
-      ['1. Fill each sheet: Income, Expenses, Savings'],
-      ['2. Date format: YYYY-MM-DD (e.g., 2024-01-15)'],
-      ['3. Amount: numbers only (no ₹ or commas)'],
-      ['4. Do NOT rename or reorder columns'],
-      ['5. Save as .xlsx and drop back into the upload area'],
+      ['HOW TO USE'],
+      ['1.  Open the Income, Expenses, and Savings sheets below.'],
+      ['2.  Replace the sample rows with your own data (delete the samples when done).'],
+      ['3.  Keep the column headers exactly as they are — do NOT rename or reorder.'],
+      ['4.  Save the file as .xlsx and drag it back into the Upload area.'],
+      [''],
+      ['COLUMN RULES'],
+      ['•  date            → Format YYYY-MM-DD (e.g. 2024-01-15). Excel dates also work.'],
+      ['•  amount          → Number only. No ₹ symbol, no commas (e.g. 50000, not ₹50,000).'],
+      ['•  source          → Income source text (e.g. Salary, Freelance, Interest).'],
+      ['•  expense_details → What you spent on (e.g. Groceries, Fuel, Rent).'],
+      ['•  payment_mode    → One of: UPI, Cash, Card, Credit Card, Bank Transfer, Other.'],
+      ['•  details         → Optional note for savings (e.g. Emergency Fund).'],
+      [''],
+      ['TIPS'],
+      ['•  You can leave a sheet empty if you have no data for it.'],
+      ['•  Rows with errors are shown in the preview before import — you can fix and re-upload.'],
+      ['•  Amounts must be greater than zero.'],
     ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(instructions), 'Instructions');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
-      { date: '2024-01-15', amount: 50000, source: 'Salary' },
-    ]), 'Income');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
-      { date: '2024-01-10', amount: 2000, expense_details: 'Groceries', payment_mode: 'UPI' },
-    ]), 'Expenses');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([
+    const insWs = XLSX.utils.aoa_to_sheet(instructions);
+    insWs['!cols'] = [{ wch: 90 }];
+    // Bold section headings
+    ['A1', 'A3', 'A9', 'A17'].forEach((c) => {
+      if (insWs[c]) insWs[c].s = { font: { bold: true, sz: 12 } };
+    });
+    XLSX.utils.book_append_sheet(wb, insWs, 'Instructions');
+
+    // ---------- Data sheets with multiple examples ----------
+    const income = [
+      { date: '2024-01-01', amount: 50000, source: 'Salary' },
+      { date: '2024-01-15', amount: 8000, source: 'Freelance Work' },
+      { date: '2024-01-28', amount: 1200, source: 'Interest' },
+    ];
+    const expenses = [
+      { date: '2024-01-02', amount: 12000, expense_details: 'Rent', payment_mode: 'Bank Transfer' },
+      { date: '2024-01-05', amount: 2500, expense_details: 'Groceries', payment_mode: 'UPI' },
+      { date: '2024-01-10', amount: 800, expense_details: 'Fuel', payment_mode: 'Card' },
+      { date: '2024-01-18', amount: 450, expense_details: 'Dining Out', payment_mode: 'UPI' },
+    ];
+    const savings = [
+      { date: '2024-01-05', amount: 5000, details: 'Emergency Fund' },
       { date: '2024-01-31', amount: 10000, details: 'Monthly Savings' },
     ]), 'Savings');
     XLSX.writeFile(wb, 'bsh_accounts_template.xlsx');
