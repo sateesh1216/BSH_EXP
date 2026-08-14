@@ -643,18 +643,18 @@ const Dashboard = () => {
         path="/"
       />
       {/* Header */}
-      <header className="border-b border-border/40 sticky top-0 z-50 backdrop-blur-md bg-card/80 h-[65px]">
-        <div className="px-4 sm:px-6 lg:px-8 h-full">
-          <div className="flex justify-between items-center h-full">
-            <div className="flex items-center gap-2 sm:gap-3">
+      <header className="border-b border-border/40 sticky top-0 z-50 backdrop-blur-xl bg-card/80 supports-[backdrop-filter]:bg-card/60">
+        <div className="px-3 sm:px-6 lg:px-8 h-14 sm:h-[65px]">
+          <div className="flex justify-between items-center gap-2 h-full">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               {/* Mobile Menu */}
               <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden shrink-0">
+                  <Button variant="ghost" size="icon" className="lg:hidden shrink-0 -ml-1 active:scale-95">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-80">
+                <SheetContent side="left" className="p-0 w-[85vw] max-w-sm">
                   <Sidebar
                     activeSection={activeSection}
                     setActiveSection={(section) => { setActiveSection(section); setSidebarOpen(false); }}
@@ -665,24 +665,35 @@ const Dashboard = () => {
                   />
                 </SheetContent>
               </Sheet>
-              <div className="p-1.5 sm:p-2 bg-gradient-primary rounded-xl shadow-glow">
-                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+              <div className="p-1.5 sm:p-2 bg-gradient-primary rounded-xl shadow-glow shrink-0">
+                <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-primary-foreground" />
               </div>
-              <div>
-                <h1 className="text-lg sm:text-xl font-bold text-gradient">BSH Accounts — Personal Finance Dashboard</h1>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-bold text-gradient truncate">
+                  <span className="sm:hidden">BSH Accounts</span>
+                  <span className="hidden sm:inline">BSH Accounts — Personal Finance Dashboard</span>
+                </h1>
                 <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Financial Management</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
               <span className="text-sm text-muted-foreground hidden xl:block">
                 Welcome, <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
               </span>
-              <ExportPdfReport selectedMonth={selectedMonth} selectedYear={selectedYear} />
-              <Button variant="outline" onClick={() => window.location.reload()} size="sm" className="border-border/40 hover:bg-muted/60">
+              <div className="hidden sm:block">
+                <ExportPdfReport selectedMonth={selectedMonth} selectedYear={selectedYear} />
+              </div>
+              <Button variant="ghost" onClick={() => window.location.reload()} size="icon" className="sm:hidden h-9 w-9 active:scale-95">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" onClick={() => window.location.reload()} size="sm" className="hidden sm:inline-flex border-border/40 hover:bg-muted/60">
                 <RefreshCw className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Refresh</span>
               </Button>
-              <Button variant="outline" onClick={signOut} size="sm" className="border-border/40 hover:bg-muted/60">
+              <Button variant="ghost" onClick={signOut} size="icon" className="sm:hidden h-9 w-9 active:scale-95">
+                <LogOut className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" onClick={signOut} size="sm" className="hidden sm:inline-flex border-border/40 hover:bg-muted/60">
                 <LogOut className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Logout</span>
               </Button>
@@ -690,6 +701,7 @@ const Dashboard = () => {
           </div>
         </div>
       </header>
+
 
       {/* Main Layout */}
       <div className="flex">
