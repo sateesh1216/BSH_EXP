@@ -426,7 +426,7 @@ const Dashboard = () => {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button disabled={downloadingFiltered} variant="outline" size="sm" className="ml-auto gap-2">
+          <Button disabled={downloadingFiltered} variant="outline" size="sm" className="ml-auto gap-2 h-11 sm:h-10 rounded-xl">
             <Download className="h-4 w-4" />
             {downloadingFiltered ? 'Exporting...' : 'Download Results'}
           </Button>
@@ -453,15 +453,15 @@ const Dashboard = () => {
         return (
           <div className="space-y-6">
             <IncomeForm />
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="relative">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+              <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input placeholder="Search income..." value={incomeSearchTerm} onChange={(e) => setIncomeSearchTerm(e.target.value)} className="pl-10 w-[200px]" />
+                <Input placeholder="Search income..." value={incomeSearchTerm} onChange={(e) => setIncomeSearchTerm(e.target.value)} className="pl-10 w-full sm:w-[200px] h-11 sm:h-10 rounded-xl" />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !incomeStartDate && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("flex-1 sm:flex-none sm:w-[140px] h-11 sm:h-10 rounded-xl justify-start text-left font-normal", !incomeStartDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {incomeStartDate ? format(incomeStartDate, "dd/MM/yyyy") : "From Date"}
                     </Button>
@@ -473,7 +473,7 @@ const Dashboard = () => {
                 <span className="text-muted-foreground">to</span>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !incomeEndDate && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("flex-1 sm:flex-none sm:w-[140px] h-11 sm:h-10 rounded-xl justify-start text-left font-normal", !incomeEndDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {incomeEndDate ? format(incomeEndDate, "dd/MM/yyyy") : "To Date"}
                     </Button>
@@ -507,15 +507,15 @@ const Dashboard = () => {
         return (
           <div className="space-y-6">
             <ExpenseForm />
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="relative">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+              <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input placeholder="Search expenses..." value={expenseSearchTerm} onChange={(e) => setExpenseSearchTerm(e.target.value)} className="pl-10 w-[200px]" />
+                <Input placeholder="Search expenses..." value={expenseSearchTerm} onChange={(e) => setExpenseSearchTerm(e.target.value)} className="pl-10 w-full sm:w-[200px] h-11 sm:h-10 rounded-xl" />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !expenseStartDate && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("flex-1 sm:flex-none sm:w-[140px] h-11 sm:h-10 rounded-xl justify-start text-left font-normal", !expenseStartDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {expenseStartDate ? format(expenseStartDate, "dd/MM/yyyy") : "From Date"}
                     </Button>
@@ -527,7 +527,7 @@ const Dashboard = () => {
                 <span className="text-muted-foreground">to</span>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !expenseEndDate && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("flex-1 sm:flex-none sm:w-[140px] h-11 sm:h-10 rounded-xl justify-start text-left font-normal", !expenseEndDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {expenseEndDate ? format(expenseEndDate, "dd/MM/yyyy") : "To Date"}
                     </Button>
@@ -567,15 +567,15 @@ const Dashboard = () => {
         return (
           <div className="space-y-6">
             <SavingsForm />
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="relative">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+              <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input placeholder="Search savings..." value={savingsSearchTerm} onChange={(e) => setSavingsSearchTerm(e.target.value)} className="pl-10 w-[200px]" />
+                <Input placeholder="Search savings..." value={savingsSearchTerm} onChange={(e) => setSavingsSearchTerm(e.target.value)} className="pl-10 w-full sm:w-[200px] h-11 sm:h-10 rounded-xl" />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !savingsStartDate && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("flex-1 sm:flex-none sm:w-[140px] h-11 sm:h-10 rounded-xl justify-start text-left font-normal", !savingsStartDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {savingsStartDate ? format(savingsStartDate, "dd/MM/yyyy") : "From Date"}
                     </Button>
@@ -587,7 +587,7 @@ const Dashboard = () => {
                 <span className="text-muted-foreground">to</span>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !savingsEndDate && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("flex-1 sm:flex-none sm:w-[140px] h-11 sm:h-10 rounded-xl justify-start text-left font-normal", !savingsEndDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {savingsEndDate ? format(savingsEndDate, "dd/MM/yyyy") : "To Date"}
                     </Button>
