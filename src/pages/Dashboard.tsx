@@ -718,29 +718,33 @@ const Dashboard = () => {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 pb-20 lg:pb-0 overflow-auto scroll-smooth">
-          <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+        <main className="flex-1 min-w-0 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-0 overflow-auto scroll-smooth">
+          <div className="p-3 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-4 sm:space-y-6">
             {/* Reminders */}
             <UpcomingReminders />
 
             {/* Summary Cards */}
             <MonthlySummaryCards selectedMonth={selectedMonth} selectedYear={selectedYear} />
 
-            {/* Section Header - Desktop */}
+            {/* Section Header */}
             {currentMeta && (
-              <div className="hidden lg:flex items-center gap-3 pb-3 animate-fade-in">
-                <div className="p-2 rounded-xl bg-primary/10 transition-colors duration-300">
+              <div className="flex items-center gap-3 pb-1 lg:pb-3 animate-fade-in">
+                <div className="p-2 rounded-xl bg-primary/10 transition-colors duration-300 shrink-0">
                   {SectionIcon && <SectionIcon className="h-5 w-5 text-primary" />}
                 </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">{currentMeta.label}</h2>
-                  <p className="text-sm text-muted-foreground">{currentMeta.description}</p>
+                <div className="min-w-0">
+                  <h2 className="text-base sm:text-lg font-semibold text-foreground truncate">{currentMeta.label}</h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">{currentMeta.description}</p>
+                </div>
+                <div className="ml-auto sm:hidden">
+                  <ExportPdfReport selectedMonth={selectedMonth} selectedYear={selectedYear} />
                 </div>
               </div>
             )}
 
             {/* Dynamic Content */}
             <div className="animate-fade-in">{renderContent()}</div>
+
           </div>
         </main>
       </div>
