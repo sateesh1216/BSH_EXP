@@ -426,7 +426,7 @@ const Dashboard = () => {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button disabled={downloadingFiltered} variant="outline" size="sm" className="ml-auto gap-2">
+          <Button disabled={downloadingFiltered} variant="outline" size="sm" className="ml-auto gap-2 h-11 sm:h-10 rounded-xl">
             <Download className="h-4 w-4" />
             {downloadingFiltered ? 'Exporting...' : 'Download Results'}
           </Button>
@@ -453,15 +453,15 @@ const Dashboard = () => {
         return (
           <div className="space-y-6">
             <IncomeForm />
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="relative">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+              <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input placeholder="Search income..." value={incomeSearchTerm} onChange={(e) => setIncomeSearchTerm(e.target.value)} className="pl-10 w-[200px]" />
+                <Input placeholder="Search income..." value={incomeSearchTerm} onChange={(e) => setIncomeSearchTerm(e.target.value)} className="pl-10 w-full sm:w-[200px] h-11 sm:h-10 rounded-xl" />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !incomeStartDate && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("flex-1 sm:flex-none sm:w-[140px] h-11 sm:h-10 rounded-xl justify-start text-left font-normal", !incomeStartDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {incomeStartDate ? format(incomeStartDate, "dd/MM/yyyy") : "From Date"}
                     </Button>
@@ -473,7 +473,7 @@ const Dashboard = () => {
                 <span className="text-muted-foreground">to</span>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !incomeEndDate && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("flex-1 sm:flex-none sm:w-[140px] h-11 sm:h-10 rounded-xl justify-start text-left font-normal", !incomeEndDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {incomeEndDate ? format(incomeEndDate, "dd/MM/yyyy") : "To Date"}
                     </Button>
@@ -507,15 +507,15 @@ const Dashboard = () => {
         return (
           <div className="space-y-6">
             <ExpenseForm />
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="relative">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+              <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input placeholder="Search expenses..." value={expenseSearchTerm} onChange={(e) => setExpenseSearchTerm(e.target.value)} className="pl-10 w-[200px]" />
+                <Input placeholder="Search expenses..." value={expenseSearchTerm} onChange={(e) => setExpenseSearchTerm(e.target.value)} className="pl-10 w-full sm:w-[200px] h-11 sm:h-10 rounded-xl" />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !expenseStartDate && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("flex-1 sm:flex-none sm:w-[140px] h-11 sm:h-10 rounded-xl justify-start text-left font-normal", !expenseStartDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {expenseStartDate ? format(expenseStartDate, "dd/MM/yyyy") : "From Date"}
                     </Button>
@@ -527,7 +527,7 @@ const Dashboard = () => {
                 <span className="text-muted-foreground">to</span>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !expenseEndDate && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("flex-1 sm:flex-none sm:w-[140px] h-11 sm:h-10 rounded-xl justify-start text-left font-normal", !expenseEndDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {expenseEndDate ? format(expenseEndDate, "dd/MM/yyyy") : "To Date"}
                     </Button>
@@ -567,15 +567,15 @@ const Dashboard = () => {
         return (
           <div className="space-y-6">
             <SavingsForm />
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="relative">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+              <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input placeholder="Search savings..." value={savingsSearchTerm} onChange={(e) => setSavingsSearchTerm(e.target.value)} className="pl-10 w-[200px]" />
+                <Input placeholder="Search savings..." value={savingsSearchTerm} onChange={(e) => setSavingsSearchTerm(e.target.value)} className="pl-10 w-full sm:w-[200px] h-11 sm:h-10 rounded-xl" />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !savingsStartDate && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("flex-1 sm:flex-none sm:w-[140px] h-11 sm:h-10 rounded-xl justify-start text-left font-normal", !savingsStartDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {savingsStartDate ? format(savingsStartDate, "dd/MM/yyyy") : "From Date"}
                     </Button>
@@ -587,7 +587,7 @@ const Dashboard = () => {
                 <span className="text-muted-foreground">to</span>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-[140px] justify-start text-left font-normal", !savingsEndDate && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("flex-1 sm:flex-none sm:w-[140px] h-11 sm:h-10 rounded-xl justify-start text-left font-normal", !savingsEndDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {savingsEndDate ? format(savingsEndDate, "dd/MM/yyyy") : "To Date"}
                     </Button>
@@ -643,18 +643,18 @@ const Dashboard = () => {
         path="/"
       />
       {/* Header */}
-      <header className="border-b border-border/40 sticky top-0 z-50 backdrop-blur-md bg-card/80 h-[65px]">
-        <div className="px-4 sm:px-6 lg:px-8 h-full">
-          <div className="flex justify-between items-center h-full">
-            <div className="flex items-center gap-2 sm:gap-3">
+      <header className="border-b border-border/40 sticky top-0 z-50 backdrop-blur-xl bg-card/80 supports-[backdrop-filter]:bg-card/60">
+        <div className="px-3 sm:px-6 lg:px-8 h-14 sm:h-[65px]">
+          <div className="flex justify-between items-center gap-2 h-full">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               {/* Mobile Menu */}
               <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden shrink-0">
+                  <Button variant="ghost" size="icon" className="lg:hidden shrink-0 -ml-1 active:scale-95">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-80">
+                <SheetContent side="left" className="p-0 w-[85vw] max-w-sm">
                   <Sidebar
                     activeSection={activeSection}
                     setActiveSection={(section) => { setActiveSection(section); setSidebarOpen(false); }}
@@ -665,24 +665,35 @@ const Dashboard = () => {
                   />
                 </SheetContent>
               </Sheet>
-              <div className="p-1.5 sm:p-2 bg-gradient-primary rounded-xl shadow-glow">
-                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+              <div className="p-1.5 sm:p-2 bg-gradient-primary rounded-xl shadow-glow shrink-0">
+                <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-primary-foreground" />
               </div>
-              <div>
-                <h1 className="text-lg sm:text-xl font-bold text-gradient">BSH Accounts — Personal Finance Dashboard</h1>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-bold text-gradient truncate">
+                  <span className="sm:hidden">BSH Accounts</span>
+                  <span className="hidden sm:inline">BSH Accounts — Personal Finance Dashboard</span>
+                </h1>
                 <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">Financial Management</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
               <span className="text-sm text-muted-foreground hidden xl:block">
                 Welcome, <span className="font-medium text-foreground">{user?.email?.split('@')[0]}</span>
               </span>
-              <ExportPdfReport selectedMonth={selectedMonth} selectedYear={selectedYear} />
-              <Button variant="outline" onClick={() => window.location.reload()} size="sm" className="border-border/40 hover:bg-muted/60">
+              <div className="hidden sm:block">
+                <ExportPdfReport selectedMonth={selectedMonth} selectedYear={selectedYear} />
+              </div>
+              <Button variant="ghost" onClick={() => window.location.reload()} size="icon" className="sm:hidden h-9 w-9 active:scale-95">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" onClick={() => window.location.reload()} size="sm" className="hidden sm:inline-flex border-border/40 hover:bg-muted/60">
                 <RefreshCw className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Refresh</span>
               </Button>
-              <Button variant="outline" onClick={signOut} size="sm" className="border-border/40 hover:bg-muted/60">
+              <Button variant="ghost" onClick={signOut} size="icon" className="sm:hidden h-9 w-9 active:scale-95">
+                <LogOut className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" onClick={signOut} size="sm" className="hidden sm:inline-flex border-border/40 hover:bg-muted/60">
                 <LogOut className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Logout</span>
               </Button>
@@ -690,6 +701,7 @@ const Dashboard = () => {
           </div>
         </div>
       </header>
+
 
       {/* Main Layout */}
       <div className="flex">
@@ -706,29 +718,33 @@ const Dashboard = () => {
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 pb-20 lg:pb-0 overflow-auto scroll-smooth">
-          <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+        <main className="flex-1 min-w-0 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-0 overflow-auto scroll-smooth">
+          <div className="p-3 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-4 sm:space-y-6">
             {/* Reminders */}
             <UpcomingReminders />
 
             {/* Summary Cards */}
             <MonthlySummaryCards selectedMonth={selectedMonth} selectedYear={selectedYear} />
 
-            {/* Section Header - Desktop */}
+            {/* Section Header */}
             {currentMeta && (
-              <div className="hidden lg:flex items-center gap-3 pb-3 animate-fade-in">
-                <div className="p-2 rounded-xl bg-primary/10 transition-colors duration-300">
+              <div className="flex items-center gap-3 pb-1 lg:pb-3 animate-fade-in">
+                <div className="p-2 rounded-xl bg-primary/10 transition-colors duration-300 shrink-0">
                   {SectionIcon && <SectionIcon className="h-5 w-5 text-primary" />}
                 </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">{currentMeta.label}</h2>
-                  <p className="text-sm text-muted-foreground">{currentMeta.description}</p>
+                <div className="min-w-0">
+                  <h2 className="text-base sm:text-lg font-semibold text-foreground truncate">{currentMeta.label}</h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">{currentMeta.description}</p>
+                </div>
+                <div className="ml-auto sm:hidden">
+                  <ExportPdfReport selectedMonth={selectedMonth} selectedYear={selectedYear} />
                 </div>
               </div>
             )}
 
             {/* Dynamic Content */}
             <div className="animate-fade-in">{renderContent()}</div>
+
           </div>
         </main>
       </div>

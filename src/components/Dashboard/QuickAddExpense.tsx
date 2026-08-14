@@ -153,7 +153,7 @@ const QuickAddExpense = () => {
       <DialogTrigger asChild>
         <Button
           size="icon"
-          className="fixed bottom-20 lg:bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
+          className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] lg:bottom-6 right-4 sm:right-6 h-14 w-14 rounded-full shadow-glow active:scale-90 transition-transform z-50"
         >
           <Plus className="h-6 w-6" />
         </Button>

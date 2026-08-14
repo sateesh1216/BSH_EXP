@@ -29,8 +29,8 @@ const BottomNav = ({ activeSection, setActiveSection }: BottomNavProps) => {
   const { isAdmin } = useAuth();
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/90 backdrop-blur-xl border-t border-border/50 safe-area-bottom shadow-lg">
-      <div className="flex items-center justify-around px-1 py-1">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/85 backdrop-blur-2xl border-t border-border/50 safe-area-bottom shadow-[0_-8px_30px_-12px_hsl(var(--foreground)/0.25)]">
+      <div className="flex items-stretch justify-around px-1 pt-1.5 pb-1">
         {primaryItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeSection === item.id;
@@ -39,14 +39,21 @@ const BottomNav = ({ activeSection, setActiveSection }: BottomNavProps) => {
               key={item.id}
               onClick={() => setActiveSection(item.id)}
               className={cn(
-                'flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl transition-all duration-200 ease-out min-w-0 flex-1 active:scale-95',
-                isActive
-                  ? 'text-primary bg-primary/10 shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground active:bg-muted/40'
+                'relative flex flex-col items-center justify-center gap-1 px-1 py-1.5 rounded-2xl transition-all duration-300 ease-out min-w-0 flex-1 active:scale-90',
+                isActive ? 'text-primary' : 'text-muted-foreground'
               )}
             >
-              <Icon className={cn('h-5 w-5 shrink-0 transition-transform duration-200', isActive && 'scale-110')} />
-              <span className={cn("text-[10px] font-medium truncate transition-all duration-200", isActive && "font-semibold")}>{item.label}</span>
+              <span
+                className={cn(
+                  'flex items-center justify-center h-8 w-14 rounded-full transition-all duration-300',
+                  isActive ? 'bg-primary/15' : 'bg-transparent'
+                )}
+              >
+                <Icon className={cn('h-5 w-5 shrink-0 transition-transform duration-300', isActive && 'scale-110')} />
+              </span>
+              <span className={cn('text-[10px] leading-none truncate transition-all duration-200', isActive ? 'font-semibold' : 'font-medium')}>
+                {item.label}
+              </span>
             </button>
           );
         })}
@@ -56,16 +63,24 @@ const BottomNav = ({ activeSection, setActiveSection }: BottomNavProps) => {
           <SheetTrigger asChild>
             <button
               className={cn(
-                'flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all min-w-0 flex-1',
-                ['download', 'upload', 'delete'].includes(activeSection)
-                  ? 'text-primary bg-primary/10'
-                  : 'text-muted-foreground hover:text-foreground'
+                'relative flex flex-col items-center justify-center gap-1 px-1 py-1.5 rounded-2xl transition-all duration-300 min-w-0 flex-1 active:scale-90',
+                ['reports', 'download', 'upload', 'delete'].includes(activeSection)
+                  ? 'text-primary'
+                  : 'text-muted-foreground'
               )}
             >
-              <MoreHorizontal className="h-5 w-5 shrink-0" />
-              <span className="text-[10px] font-medium">More</span>
+              <span
+                className={cn(
+                  'flex items-center justify-center h-8 w-14 rounded-full transition-all duration-300',
+                  ['reports', 'download', 'upload', 'delete'].includes(activeSection) ? 'bg-primary/15' : 'bg-transparent'
+                )}
+              >
+                <MoreHorizontal className="h-5 w-5 shrink-0" />
+              </span>
+              <span className="text-[10px] leading-none font-medium">More</span>
             </button>
           </SheetTrigger>
+
           <SheetContent side="bottom" className="rounded-t-2xl pb-8">
             <div className="space-y-2 pt-2">
               <h3 className="font-semibold text-sm mb-3 text-muted-foreground">More Options</h3>
