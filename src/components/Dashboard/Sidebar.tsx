@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, PiggyBank, BarChart3, Calendar, Download, Upload, Shield, Key, Trash2, User, ChevronRight, HandCoins } from 'lucide-react';
+import { TrendingUp, TrendingDown, PiggyBank, BarChart3, Calendar, Download, Upload, Shield, Key, Trash2, User, ChevronRight, HandCoins, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
@@ -190,6 +190,15 @@ const Sidebar = ({
 
       {/* Fixed bottom: Account section */}
       <div className="border-t border-border/50 p-4 bg-card/90 backdrop-blur-sm space-y-1">
+        <a
+          href="https://www.bshtaxiservices.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-foreground/70 hover:bg-accent hover:text-foreground transition-all"
+        >
+          <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <span className="flex-1 text-left">Taxi in vizag</span>
+        </a>
         <Link to="/profile">
           <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-foreground/70 hover:bg-accent hover:text-foreground transition-all">
             <User className="h-4 w-4 shrink-0 text-muted-foreground" />
