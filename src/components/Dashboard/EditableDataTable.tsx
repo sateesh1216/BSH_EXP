@@ -9,10 +9,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
-import { Edit, Trash2, Save, X, FileText, Download, XCircle, Bell } from 'lucide-react';
+import { Edit, Trash2, Save, X, FileText, Download, XCircle, Bell, Eye } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 
 interface EditableDataTableProps {
   type: 'income' | 'expenses' | 'savings';
@@ -26,9 +28,11 @@ interface EditableDataTableProps {
 const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, startDate, endDate }: EditableDataTableProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>({});
+  const [selectedItem, setSelectedItem] = useState<any>(null);
   const [billFile, setBillFile] = useState<File | null>(null);
   const [warrantyFile, setWarrantyFile] = useState<File | null>(null);
   const [reminderConfirmItem, setReminderConfirmItem] = useState<any>(null);
@@ -351,6 +355,12 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
     return format(new Date(dateString), 'MMM dd, yyyy');
   };
 
+  const handleRowClick = (item: any) => {
+    if (isMobile && editingId !== item.id) {
+      setSelectedItem(item);
+    }
+  };
+
   const handleEdit = (item: any) => {
     setEditingId(item.id);
     setEditData({ ...item });
@@ -491,7 +501,11 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
           <TableBody>
             {data && data.length > 0 ? (
               data.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow 
+                  key={item.id} 
+                  className={`transition-colors ${isMobile && editingId !== item.id ? 'cursor-pointer active:bg-muted/60 hover:bg-muted/40' : ''}`}
+                  onClick={() => handleRowClick(item)}
+                >
                   {type === 'income' && (
                     <>
                       <TableCell>
@@ -732,7 +746,7 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={handleSave}
+                          onClick={(e) => { e.stopPropagation(); handleSave(); }}
                           disabled={updateMutation.isPending}
                         >
                           <Save className="h-4 w-4" />
@@ -740,24 +754,45 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={handleCancel}
+                          onClick={(e) => { e.stopPropagation(); handleCancel(); }}
                         >
                           <X className="h-4 w-4" />
                         </Button>
+                      </div>
+                    ) : isMobile ? (
+                      <div className="flex justify-center">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="icon"
+                                variant="outline"
+                                onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
+                                aria-label="View details"
+                                className="h-8 w-8"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>View details</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     ) : (
                       <div className="flex gap-2 justify-center">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleEdit(item)}
+                          onClick={(e) => { e.stopPropagation(); handleEdit(item); }}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleDelete(item.id)}
+                          onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
                           disabled={deleteMutation.isPending}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -769,7 +804,7 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => setReminderConfirmItem(item)}
+                                  onClick={(e) => { e.stopPropagation(); setReminderConfirmItem(item); }}
                                   disabled={addReminderMutation.isPending}
                                 >
                                   <Bell className="h-4 w-4" />
@@ -871,6 +906,116 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
               <Bell className="h-4 w-4" /> Confirm Reminder
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mobile Transaction Detail Modal */}
+      <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
+        <DialogContent className="sm:max-w-md max-w-[95vw] rounded-2xl p-0 gap-0 overflow-hidden">
+          {selectedItem && (
+            <>
+              <div className={`p-6 text-center ${
+                type === 'income' ? 'bg-emerald-50/50 dark:bg-emerald-950/20' : 
+                type === 'expenses' ? 'bg-rose-50/50 dark:bg-rose-950/20' : 
+                'bg-blue-50/50 dark:bg-blue-950/20'
+              }`}>
+                <DialogHeader className="space-y-2">
+                  <DialogTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                    {type === 'income' ? 'Income' : type === 'expenses' ? 'Expense' : 'Savings'} Details
+                  </DialogTitle>
+                  <div className={`text-3xl font-bold ${getColorClass()}`}>
+                    {formatCurrency(selectedItem.amount)}
+                  </div>
+                </DialogHeader>
+              </div>
+              
+              <div className="p-6 space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Date</p>
+                    <p className="font-semibold">{formatDate(selectedItem.date)}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Category</p>
+                    <Badge variant="secondary" className="font-medium capitalize">
+                      {type === 'expenses' ? formatPaymentMode(selectedItem.payment_mode) : type === 'income' ? 'Income' : 'Savings'}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    {type === 'income' ? 'Source' : type === 'expenses' ? 'Expense Details' : 'Saving Details'}
+                  </p>
+                  <p className="font-semibold text-lg leading-relaxed">
+                    {type === 'income' ? selectedItem.source : type === 'expenses' ? selectedItem.expense_details : selectedItem.details || 'N/A'}
+                  </p>
+                </div>
+
+                {type === 'expenses' && (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedItem.attachment_url && (
+                      <button
+                        type="button"
+                        onClick={() => openAttachment(selectedItem.attachment_url)}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
+                      >
+                        <FileText className="h-4 w-4" />
+                        View Bill
+                      </button>
+                    )}
+                    {selectedItem.warranty_url && (
+                      <button
+                        type="button"
+                        onClick={() => openAttachment(selectedItem.warranty_url)}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
+                      >
+                        <FileText className="h-4 w-4" />
+                        View Warranty
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedItem(null);
+                      handleEdit(selectedItem);
+                    }}
+                    className="gap-2"
+                  >
+                    <Edit className="h-4 w-4" /> Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedItem(null);
+                      handleDelete(selectedItem.id);
+                    }}
+                    disabled={deleteMutation.isPending}
+                    className="gap-2 text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" /> Delete
+                  </Button>
+                </div>
+                {(type === 'expenses' || type === 'savings') && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setSelectedItem(null);
+                      setReminderConfirmItem(selectedItem);
+                    }}
+                    disabled={addReminderMutation.isPending}
+                    className="w-full gap-2"
+                  >
+                    <Bell className="h-4 w-4" /> Add Recurring Reminder
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </Card>
