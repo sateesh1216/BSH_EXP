@@ -761,15 +761,24 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
                       </div>
                     ) : isMobile ? (
                       <div className="flex justify-center">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
-                          className="gap-1.5"
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span className="text-xs">View</span>
-                        </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="icon"
+                                variant="outline"
+                                onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
+                                aria-label="View details"
+                                className="h-8 w-8"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>View details</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     ) : (
                       <div className="flex gap-2 justify-center">
