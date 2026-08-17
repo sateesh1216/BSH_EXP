@@ -899,6 +899,116 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Mobile Transaction Detail Modal */}
+      <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
+        <DialogContent className="sm:max-w-md max-w-[95vw] rounded-2xl p-0 gap-0 overflow-hidden">
+          {selectedItem && (
+            <>
+              <div className={`p-6 text-center ${
+                type === 'income' ? 'bg-emerald-50/50 dark:bg-emerald-950/20' : 
+                type === 'expenses' ? 'bg-rose-50/50 dark:bg-rose-950/20' : 
+                'bg-blue-50/50 dark:bg-blue-950/20'
+              }`}>
+                <DialogHeader className="space-y-2">
+                  <DialogTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                    {type === 'income' ? 'Income' : type === 'expenses' ? 'Expense' : 'Savings'} Details
+                  </DialogTitle>
+                  <div className={`text-3xl font-bold ${getColorClass()}`}>
+                    {formatCurrency(selectedItem.amount)}
+                  </div>
+                </DialogHeader>
+              </div>
+              
+              <div className="p-6 space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Date</p>
+                    <p className="font-semibold">{formatDate(selectedItem.date)}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Category</p>
+                    <Badge variant="secondary" className="font-medium capitalize">
+                      {type === 'expenses' ? formatPaymentMode(selectedItem.payment_mode) : type === 'income' ? 'Income' : 'Savings'}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    {type === 'income' ? 'Source' : type === 'expenses' ? 'Expense Details' : 'Saving Details'}
+                  </p>
+                  <p className="font-semibold text-lg leading-relaxed">
+                    {type === 'income' ? selectedItem.source : type === 'expenses' ? selectedItem.expense_details : selectedItem.details || 'N/A'}
+                  </p>
+                </div>
+
+                {type === 'expenses' && (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedItem.attachment_url && (
+                      <button
+                        type="button"
+                        onClick={() => openAttachment(selectedItem.attachment_url)}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
+                      >
+                        <FileText className="h-4 w-4" />
+                        View Bill
+                      </button>
+                    )}
+                    {selectedItem.warranty_url && (
+                      <button
+                        type="button"
+                        onClick={() => openAttachment(selectedItem.warranty_url)}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
+                      >
+                        <FileText className="h-4 w-4" />
+                        View Warranty
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedItem(null);
+                      handleEdit(selectedItem);
+                    }}
+                    className="gap-2"
+                  >
+                    <Edit className="h-4 w-4" /> Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedItem(null);
+                      handleDelete(selectedItem.id);
+                    }}
+                    disabled={deleteMutation.isPending}
+                    className="gap-2 text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" /> Delete
+                  </Button>
+                </div>
+                {(type === 'expenses' || type === 'savings') && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setSelectedItem(null);
+                      setReminderConfirmItem(selectedItem);
+                    }}
+                    disabled={addReminderMutation.isPending}
+                    className="w-full gap-2"
+                  >
+                    <Bell className="h-4 w-4" /> Add Recurring Reminder
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
