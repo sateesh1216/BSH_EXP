@@ -746,7 +746,7 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={handleSave}
+                          onClick={(e) => { e.stopPropagation(); handleSave(); }}
                           disabled={updateMutation.isPending}
                         >
                           <Save className="h-4 w-4" />
@@ -754,9 +754,21 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={handleCancel}
+                          onClick={(e) => { e.stopPropagation(); handleCancel(); }}
                         >
                           <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : isMobile ? (
+                      <div className="flex justify-center">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
+                          className="gap-1.5"
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span className="text-xs">View</span>
                         </Button>
                       </div>
                     ) : (
@@ -764,14 +776,14 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleEdit(item)}
+                          onClick={(e) => { e.stopPropagation(); handleEdit(item); }}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleDelete(item.id)}
+                          onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
                           disabled={deleteMutation.isPending}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -783,7 +795,7 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => setReminderConfirmItem(item)}
+                                  onClick={(e) => { e.stopPropagation(); setReminderConfirmItem(item); }}
                                   disabled={addReminderMutation.isPending}
                                 >
                                   <Bell className="h-4 w-4" />
