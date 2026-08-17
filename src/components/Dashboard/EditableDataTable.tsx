@@ -501,7 +501,11 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
           <TableBody>
             {data && data.length > 0 ? (
               data.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow 
+                  key={item.id} 
+                  className={`transition-colors ${isMobile && editingId !== item.id ? 'cursor-pointer active:bg-muted/60 hover:bg-muted/40' : ''}`}
+                  onClick={() => handleRowClick(item)}
+                >
                   {type === 'income' && (
                     <>
                       <TableCell>
