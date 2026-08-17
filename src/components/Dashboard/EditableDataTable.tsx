@@ -355,6 +355,12 @@ const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, star
     return format(new Date(dateString), 'MMM dd, yyyy');
   };
 
+  const handleRowClick = (item: any) => {
+    if (isMobile && editingId !== item.id) {
+      setSelectedItem(item);
+    }
+  };
+
   const handleEdit = (item: any) => {
     setEditingId(item.id);
     setEditData({ ...item });
