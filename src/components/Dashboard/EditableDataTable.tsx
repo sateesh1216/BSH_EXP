@@ -28,9 +28,11 @@ interface EditableDataTableProps {
 const EditableDataTable = ({ type, selectedMonth, selectedYear, searchTerm, startDate, endDate }: EditableDataTableProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>({});
+  const [selectedItem, setSelectedItem] = useState<any>(null);
   const [billFile, setBillFile] = useState<File | null>(null);
   const [warrantyFile, setWarrantyFile] = useState<File | null>(null);
   const [reminderConfirmItem, setReminderConfirmItem] = useState<any>(null);
